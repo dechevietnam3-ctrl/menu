@@ -182,6 +182,10 @@ local GodButton        = createMenuButton("🛡️ Chế Độ Bất Tử: TẮT
 local EspButton        = createMenuButton("👁️ Nhìn Xuyên Tường (ESP): TẮT", Color3.fromRGB(241, 196, 15))
 local InfOxygenBtn     = createMenuButton("🤿 Vô Hạn Ô-xy (Dưới nước): TẮT", Color3.fromRGB(34, 166, 179))
 local FullBrightBtn    = createMenuButton("💡 FullBright (Sáng Đêm): TẮT", Color3.fromRGB(241, 196, 15))
+local MoonGravityBtn   = createMenuButton("🌕 Trọng Lực Thấp (Moon): TẮT", Color3.fromRGB(149, 165, 166))
+local NightModeBtn     = createMenuButton("🌙 Chế Độ Ban Đêm: TẮT", Color3.fromRGB(44, 62, 80))
+local GhostModeBtn     = createMenuButton("👻 Chế Độ Tàng Hình: TẮT", Color3.fromRGB(127, 140, 141))
+local AutoClickBtn     = createMenuButton("🖱️ Auto Clicker: TẮT", Color3.fromRGB(230, 126, 34)) 
 
 ----------------------------------------------------
 -- TẠO CÁC NÚT TROLL (MỚI)
@@ -625,6 +629,58 @@ task.spawn(function()
         end
     end
 end)
+
+-- [FUNC] Trọng lực thấp (Moon Gravity)
+local moonGravityActive = false
+MoonGravityBtn.MouseButton1Click:Connect(function()
+    moonGravityActive = not moonGravityActive
+    MoonGravityBtn.Text = moonGravityActive and "🌕 Trọng Lực Thấp: BẬT" or "🌕 Trọng Lực Thấp (Moon): TẮT"
+    MoonGravityBtn.BackgroundColor3 = moonGravityActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(149, 165, 166)
+    game:GetService("Workspace").Gravity = moonGravityActive and 50 or 196.2
+end)
+
+-- [FUNC] Chế Độ Ban Đêm
+local nightModeActive = false
+NightModeBtn.MouseButton1Click:Connect(function()
+    nightModeActive = not nightModeActive
+    NightModeBtn.Text = nightModeActive and "🌙 Chế Độ Ban Đêm: BẬT" or "🌙 Chế Độ Ban Đêm: TẮT"
+    NightModeBtn.BackgroundColor3 = nightModeActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(44, 62, 80)
+    Lighting.ClockTime = nightModeActive and 0 or 14
+end)
+
+-- [FUNC] Chế Độ Tàng Hình (Ghost)
+local ghostActive = false
+GhostModeBtn.MouseButton1Click:Connect(function()
+    ghostActive = not ghostActive
+    GhostModeBtn.Text = ghostActive and "👻 Đang Tàng Hình..." or "👻 Chế Độ Tàng Hình: TẮT"
+    GhostModeBtn.BackgroundColor3 = ghostActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(127, 140, 141)
+    
+    local char = Player.Character
+    if char then
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") or part:IsA("Decal") then
+                part.Transparency = ghostActive and 1 or 0
+            end
+        end
+    end
+end)
+
+-- [FUNC] Auto Clicker
+local autoClickActive = false
+AutoClickBtn.MouseButton1Click:Connect(function()
+    autoClickActive = not autoClickActive
+    AutoClickBtn.Text = autoClickActive and "🖱️ Auto Click: BẬT" or "🖱️ Auto Clicker: TẮT"
+    AutoClickBtn.BackgroundColor3 = autoClickActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(230, 126, 34)
+end)
+
+task.spawn(function()
+    while task.wait(0.1) do
+        if autoClickActive then
+            local tool = Player.Character and Player.Character:FindFirstChildOfClass("Tool")
+            if tool then tool:Activate() end
+        end
+    end
+end) 
 
 GodButton.MouseButton1Click:Connect(function()
     godMode = not godMode
