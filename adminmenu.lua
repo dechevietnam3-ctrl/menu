@@ -3,10 +3,12 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
+local TeleportService = game:GetService("TeleportService") -- Cần thiết cho Auto-Rejoin/Leave
+local GuiService = game:GetService("GuiService")          -- Cần thiết để bắt lỗi Kick
 
 local Player = Players.LocalPlayer
 local Mouse = Player:GetMouse()
-local Camera = workspace.CurrentCamera
+local Camera = workspace.CurrentCamera 
 
 -- Khử trùng lặp UI cũ chống tràn RAM
 local oldGui = Player:WaitForChild("PlayerGui"):FindFirstChild("PremiumMenu_v6_Ultra")
@@ -194,6 +196,13 @@ local FreezeBtn        = createMenuButton("❄️ Đóng Băng Nhân Vật: TẮ
 local XRayBtn          = createMenuButton("🕶️ X-Ray (Nhìn xuyên tường): TẮT", Color3.fromRGB(52, 73, 94))
 local SpectateBtn      = createMenuButton("👀 Theo Dõi Người Khác: TẮT", Color3.fromRGB(155, 89, 182))
 local NpcEspBtn        = createMenuButton("🤖 ESP NPCs: TẮT", Color3.fromRGB(243, 156, 18)) 
+local AutoRejoinBtn    = createMenuButton("🛡️ Auto-Rejoin (Nếu bị Kick): TẮT", Color3.fromRGB(192, 57, 43))
+local StaffDetectBtn   = createMenuButton("🕵️ Staff Detector: TẮT", Color3.fromRGB(241, 196, 15))
+local AutoLeaveBtn     = createMenuButton("🏃 Auto-Leave (Khi gặp Staff): TẮT", Color3.fromRGB(230, 126, 34)) 
+local FPSBtn       = createMenuButton("🚀 FPS Booster: TẮT", Color3.fromRGB(41, 128, 185))
+local PingLabel    = createMenuButton("📡 Ping: Đang đo...", Color3.fromRGB(127, 140, 141)) -- Cái này sẽ cập nhật liên tục
+local HopperBtn    = createMenuButton("🔄 Server Hopper", Color3.fromRGB(142, 68, 173))
+local CleanBtn     = createMenuButton("🧹 Dọn Rác (Lag): TẮT", Color3.fromRGB(231, 76, 60)) 
 
 ----------------------------------------------------
 -- TẠO CÁC NÚT TROLL (MỚI)
@@ -286,6 +295,45 @@ DoubleJumpBtn.MouseButton1Click:Connect(function()
         DoubleJumpBtn.BackgroundColor3 = Color3.fromRGB(44, 62, 80)
     end
 end)
+
+-- [FUNC] STAFF DETECTOR & AUTO-LEAVE
+local staffDetectActive = false
+local autoLeaveActive = false
+
+local function checkStaff(plr)
+    local name = string.lower(plr.Name)
+    local display = string.lower(plr.DisplayName)
+    return string.find(name, "admin") or string.find(display, "admin") or string.find(name, "mod") or string.find(name, "dev")
+end
+
+local function handleStaff(plr)
+    if staffDetectActive and checkStaff(plr) then
+        if autoLeaveActive then TeleportService:Teleport(game.PlaceId, Player) end
+    end
+end
+
+Players.PlayerAdded:Connect(handleStaff)
+for _, plr in pairs(Players:GetPlayers()) do handleStaff(plr) end
+
+-- [FUNC] AUTO-REJOIN (KICK PROTECTION)
+local autoRejoinActive = false
+GuiService.ErrorMessageChanged:Connect(function()
+    if autoRejoinActive and GuiService:GetErrorMessage() ~= "" then
+        TeleportService:Teleport(game.PlaceId, Player)
+    end
+end)
+
+-- [FUNC] AUTO CLEANER (FPS BOOST)
+local cleanActive = false
+RunService.Heartbeat:Connect(function()
+    if cleanActive then
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Smoke") or obj:IsA("Fire") then
+                obj:Destroy()
+            end
+        end
+    end
+end) 
 
 InfJumpButton.MouseButton1Click:Connect(function()
     infJumpActive = not infJumpActive
@@ -692,6 +740,74 @@ MoonGravityBtn.MouseButton1Click:Connect(function()
     MoonGravityBtn.BackgroundColor3 = moonGravityActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(149, 165, 166)
     game:GetService("Workspace").Gravity = moonGravityActive and 50 or 196.2
 end)
+
+local TeleportService = game:GetService("TeleportService")
+local GuiService = game:GetService("GuiService")
+
+-- [FUNC] Auto-Rejoin khi bị Kick
+local autoRejoinActive = false
+AutoRejoinBtn.MouseButton1Click:Connect(function()
+    autoRejoinActive = not autoRejoinActive
+    AutoRejoinBtn.Text = autoRejoinActive and "🛡️ Auto-Rejoin: BẬT" or "🛡️ Auto-Rejoin: TẮT"
+    AutoRejoinBtn.BackgroundColor3 = autoRejoinActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(192, 57, 43)
+end)
+
+GuiService.ErrorMessageChanged:Connect(function()
+    if autoRejoinActive and GuiService:GetErrorMessage() ~= "" then
+        TeleportService:Teleport(game.PlaceId, Player)
+    end
+end)
+
+-- [FUNC] Staff Detector & Auto-Leave
+local staffDetectActive = false
+local autoLeaveActive = false
+
+StaffDetectBtn.MouseButton1Click:Connect(function()
+    staffDetectActive = not staffDetectActive
+    StaffDetectBtn.Text = staffDetectActive and "🕵️ Staff Detector: BẬT" or "🕵️ Staff Detector: TẮT"
+    StaffDetectBtn.BackgroundColor3 = staffDetectActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(241, 196, 15)
+end)
+
+AutoLeaveBtn.MouseButton1Click:Connect(function()
+    autoLeaveActive = not autoLeaveActive
+    AutoLeaveBtn.Text = autoLeaveActive and "🏃 Auto-Leave: BẬT" or "🏃 Auto-Leave: TẮT"
+    AutoLeaveBtn.BackgroundColor3 = autoLeaveActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(230, 126, 34)
+end)
+
+-- Hàm kiểm tra Staff (Bạn có thể thêm tên admin cụ thể tại đây)
+local function checkStaff(plr)
+    local name = string.lower(plr.Name)
+    local display = string.lower(plr.DisplayName)
+    -- Kiểm tra từ khóa nhạy cảm
+    if string.find(name, "admin") or string.find(display, "admin") or 
+       string.find(name, "mod") or string.find(name, "dev") then
+        return true
+    end
+    return false
+end
+
+-- Logic xử lý Staff
+local function handleStaff(plr)
+    if staffDetectActive then
+        if checkStaff(plr) then
+            warn("⚠️ Phát hiện Staff: " .. plr.Name)
+            -- Nếu đang bật Auto-Leave thì thoát ngay
+            if autoLeaveActive then
+                TeleportService:Teleport(12345678, Player) -- Nơi bạn muốn trốn đến
+            end
+        end
+    end
+end
+
+-- 1. Quét người chơi MỚI vào
+Players.PlayerAdded:Connect(handleStaff)
+
+-- 2. Quét người chơi ĐANG CÓ MẶT (QUAN TRỌNG - Bổ sung mới)
+for _, plr in pairs(Players:GetPlayers()) do
+    if plr ~= Player then
+        handleStaff(plr)
+    end
+end
 
 -- [FUNC] Chế Độ Ban Đêm
 local nightModeActive = false
