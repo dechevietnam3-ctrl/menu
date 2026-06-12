@@ -5,7 +5,6 @@ local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService") -- Cần thiết cho Auto-Rejoin/Leave
 local GuiService = game:GetService("GuiService")          -- Cần thiết để bắt lỗi Kick
-local Stats = game:GetService("Stats") 
 
 local Player = Players.LocalPlayer
 local Mouse = Player:GetMouse()
