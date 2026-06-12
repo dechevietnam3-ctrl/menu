@@ -1,14 +1,13 @@
+
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
-local TeleportService = game:GetService("TeleportService") -- Cần thiết cho Auto-Rejoin/Leave
-local GuiService = game:GetService("GuiService")          -- Cần thiết để bắt lỗi Kick
 
 local Player = Players.LocalPlayer
 local Mouse = Player:GetMouse()
-local Camera = workspace.CurrentCamera 
+local Camera = workspace.CurrentCamera
 
 -- Khử trùng lặp UI cũ chống tràn RAM
 local oldGui = Player:WaitForChild("PlayerGui"):FindFirstChild("PremiumMenu_v6_Ultra")
@@ -33,9 +32,8 @@ ToggleButton.ZIndex = 10
 
 local ToggleCorner = Instance.new("UICorner")
 ToggleCorner.CornerRadius = UDim.new(1,0)
-ToggleCorner.Parent = ToggleButton 
+ToggleCorner.Parent = ToggleButton
 
--- Frame chính
 -- Frame chính
 local Frame = Instance.new("Frame")
 Frame.Parent = ScreenGui
@@ -91,13 +89,11 @@ Container.CanvasSize = UDim2.new(0, 0, 0, 1800)
 Container.ScrollBarThickness = 4
 Container.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
 
--- THÊM ĐOẠN NÀY VÀO
-local GridLayout = Instance.new("UIGridLayout")
-GridLayout.Parent = Container
-GridLayout.CellSize = UDim2.new(0, 140, 0, 40) -- Kích thước mỗi nút (Rộng, Cao)
-GridLayout.CellPadding = UDim2.new(0, 10, 0, 10) -- Khoảng cách giữa các nút
-GridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-GridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = Container
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 8)
 
 -- HÀM TẠO NÚT
 local function createMenuButton(text, color)
@@ -187,23 +183,6 @@ local GodButton        = createMenuButton("🛡️ Chế Độ Bất Tử: TẮT
 local EspButton        = createMenuButton("👁️ Nhìn Xuyên Tường (ESP): TẮT", Color3.fromRGB(241, 196, 15))
 local InfOxygenBtn     = createMenuButton("🤿 Vô Hạn Ô-xy (Dưới nước): TẮT", Color3.fromRGB(34, 166, 179))
 local FullBrightBtn    = createMenuButton("💡 FullBright (Sáng Đêm): TẮT", Color3.fromRGB(241, 196, 15))
-local MoonGravityBtn   = createMenuButton("🌕 Trọng Lực Thấp (Moon): TẮT", Color3.fromRGB(149, 165, 166))
-local NightModeBtn     = createMenuButton("🌙 Chế Độ Ban Đêm: TẮT", Color3.fromRGB(44, 62, 80))
-local GhostModeBtn     = createMenuButton("👻 Chế Độ Tàng Hình: TẮT", Color3.fromRGB(127, 140, 141))
-local AutoClickBtn     = createMenuButton("🖱️ Auto Clicker: TẮT", Color3.fromRGB(230, 126, 34)) 
-local BringAllBtn      = createMenuButton("👥 Kéo Mọi Người Đến Đây", Color3.fromRGB(155, 89, 182))
-local RainbowBtn       = createMenuButton("🌈 Nhân Vật Cầu Vồng: TẮT", Color3.fromRGB(231, 76, 60))
-local FreezeBtn        = createMenuButton("❄️ Đóng Băng Nhân Vật: TẮT", Color3.fromRGB(52, 152, 219)) 
-local XRayBtn          = createMenuButton("🕶️ X-Ray (Nhìn xuyên tường): TẮT", Color3.fromRGB(52, 73, 94))
-local SpectateBtn      = createMenuButton("👀 Theo Dõi Người Khác: TẮT", Color3.fromRGB(155, 89, 182))
-local NpcEspBtn        = createMenuButton("🤖 ESP NPCs: TẮT", Color3.fromRGB(243, 156, 18)) 
-local AutoRejoinBtn    = createMenuButton("🛡️ Auto-Rejoin (Nếu bị Kick): TẮT", Color3.fromRGB(192, 57, 43))
-local StaffDetectBtn   = createMenuButton("🕵️ Staff Detector: TẮT", Color3.fromRGB(241, 196, 15))
-local AutoLeaveBtn     = createMenuButton("🏃 Auto-Leave (Khi gặp Staff): TẮT", Color3.fromRGB(230, 126, 34)) 
-local FPSBtn       = createMenuButton("🚀 FPS Booster: TẮT", Color3.fromRGB(41, 128, 185))
-local PingLabel    = createMenuButton("📡 Ping: Đang đo...", Color3.fromRGB(127, 140, 141)) -- Cái này sẽ cập nhật liên tục
-local HopperBtn    = createMenuButton("🔄 Server Hopper", Color3.fromRGB(142, 68, 173))
-local CleanBtn     = createMenuButton("🧹 Dọn Rác (Lag): TẮT", Color3.fromRGB(231, 76, 60)) 
 
 ----------------------------------------------------
 -- TẠO CÁC NÚT TROLL (MỚI)
@@ -296,45 +275,6 @@ DoubleJumpBtn.MouseButton1Click:Connect(function()
         DoubleJumpBtn.BackgroundColor3 = Color3.fromRGB(44, 62, 80)
     end
 end)
-
--- [FUNC] STAFF DETECTOR & AUTO-LEAVE
-local staffDetectActive = false
-local autoLeaveActive = false
-
-local function checkStaff(plr)
-    local name = string.lower(plr.Name)
-    local display = string.lower(plr.DisplayName)
-    return string.find(name, "admin") or string.find(display, "admin") or string.find(name, "mod") or string.find(name, "dev")
-end
-
-local function handleStaff(plr)
-    if staffDetectActive and checkStaff(plr) then
-        if autoLeaveActive then TeleportService:Teleport(game.PlaceId, Player) end
-    end
-end
-
-Players.PlayerAdded:Connect(handleStaff)
-for _, plr in pairs(Players:GetPlayers()) do handleStaff(plr) end
-
--- [FUNC] AUTO-REJOIN (KICK PROTECTION)
-local autoRejoinActive = false
-GuiService.ErrorMessageChanged:Connect(function()
-    if autoRejoinActive and GuiService:GetErrorMessage() ~= "" then
-        TeleportService:Teleport(game.PlaceId, Player)
-    end
-end)
-
--- [FUNC] AUTO CLEANER (FPS BOOST)
-local cleanActive = false
-RunService.Heartbeat:Connect(function()
-    if cleanActive then
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Smoke") or obj:IsA("Fire") then
-                obj:Destroy()
-            end
-        end
-    end
-end) 
 
 InfJumpButton.MouseButton1Click:Connect(function()
     infJumpActive = not infJumpActive
@@ -450,53 +390,7 @@ RunService.Heartbeat:Connect(function()
         end
         spin.AngularVelocity = Vector3.new(0, 65, 0)
     end
-end) 
-
--- [FUNC] Kéo mọi người về phía bạn (Dễ troll nhất)
-BringAllBtn.MouseButton1Click:Connect(function()
-    local myRoot = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-    if myRoot then
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= Player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                p.Character.HumanoidRootPart.CFrame = myRoot.CFrame * CFrame.new(0, 0, -5)
-            end
-        end
-        BringAllBtn.Text = "✅ Đã kéo tất cả!"
-        task.wait(1)
-        BringAllBtn.Text = "👥 Kéo Mọi Người Đến Đây"
-    end
 end)
-
--- [FUNC] Nhân vật Cầu vồng (Hiệu ứng nhìn rất Pro)
-local rainbowActive = false
-RainbowBtn.MouseButton1Click:Connect(function()
-    rainbowActive = not rainbowActive
-    RainbowBtn.Text = rainbowActive and "🌈 Nhân Vật Cầu Vồng: BẬT" or "🌈 Nhân Vật Cầu Vồng: TẮT"
-    RainbowBtn.BackgroundColor3 = rainbowActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(231, 76, 60)
-end)
-
-RunService.RenderStepped:Connect(function()
-    if rainbowActive and Player.Character then
-        for _, part in pairs(Player.Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.Color = Color3.fromHSV(tick() % 5 / 5, 1, 1)
-            end
-        end
-    end
-end)
-
--- [FUNC] Đóng Băng Nhân Vật (Khóa cứng vị trí)
-local freezeActive = false
-FreezeBtn.MouseButton1Click:Connect(function()
-    freezeActive = not freezeActive
-    FreezeBtn.Text = freezeActive and "❄️ Đang Đóng Băng..." or "❄️ Đóng Băng Nhân Vật: TẮT"
-    FreezeBtn.BackgroundColor3 = freezeActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(52, 152, 219)
-    
-    local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-    if root then
-        root.Anchored = freezeActive
-    end
-end) 
 
 AntiRagdollBtn.MouseButton1Click:Connect(function()
     antiRagdollActive = not antiRagdollActive
@@ -733,126 +627,6 @@ task.spawn(function()
     end
 end)
 
--- [FUNC] Trọng lực thấp (Moon Gravity)
-local moonGravityActive = false
-MoonGravityBtn.MouseButton1Click:Connect(function()
-    moonGravityActive = not moonGravityActive
-    MoonGravityBtn.Text = moonGravityActive and "🌕 Trọng Lực Thấp: BẬT" or "🌕 Trọng Lực Thấp (Moon): TẮT"
-    MoonGravityBtn.BackgroundColor3 = moonGravityActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(149, 165, 166)
-    game:GetService("Workspace").Gravity = moonGravityActive and 50 or 196.2
-end)
-
-local TeleportService = game:GetService("TeleportService")
-local GuiService = game:GetService("GuiService")
-
--- [FUNC] Auto-Rejoin khi bị Kick
-local autoRejoinActive = false
-AutoRejoinBtn.MouseButton1Click:Connect(function()
-    autoRejoinActive = not autoRejoinActive
-    AutoRejoinBtn.Text = autoRejoinActive and "🛡️ Auto-Rejoin: BẬT" or "🛡️ Auto-Rejoin: TẮT"
-    AutoRejoinBtn.BackgroundColor3 = autoRejoinActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(192, 57, 43)
-end)
-
-GuiService.ErrorMessageChanged:Connect(function()
-    if autoRejoinActive and GuiService:GetErrorMessage() ~= "" then
-        TeleportService:Teleport(game.PlaceId, Player)
-    end
-end)
-
--- [FUNC] Staff Detector & Auto-Leave
-local staffDetectActive = false
-local autoLeaveActive = false
-
-StaffDetectBtn.MouseButton1Click:Connect(function()
-    staffDetectActive = not staffDetectActive
-    StaffDetectBtn.Text = staffDetectActive and "🕵️ Staff Detector: BẬT" or "🕵️ Staff Detector: TẮT"
-    StaffDetectBtn.BackgroundColor3 = staffDetectActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(241, 196, 15)
-end)
-
-AutoLeaveBtn.MouseButton1Click:Connect(function()
-    autoLeaveActive = not autoLeaveActive
-    AutoLeaveBtn.Text = autoLeaveActive and "🏃 Auto-Leave: BẬT" or "🏃 Auto-Leave: TẮT"
-    AutoLeaveBtn.BackgroundColor3 = autoLeaveActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(230, 126, 34)
-end)
-
--- Hàm kiểm tra Staff (Bạn có thể thêm tên admin cụ thể tại đây)
-local function checkStaff(plr)
-    local name = string.lower(plr.Name)
-    local display = string.lower(plr.DisplayName)
-    -- Kiểm tra từ khóa nhạy cảm
-    if string.find(name, "admin") or string.find(display, "admin") or 
-       string.find(name, "mod") or string.find(name, "dev") then
-        return true
-    end
-    return false
-end
-
--- Logic xử lý Staff
-local function handleStaff(plr)
-    if staffDetectActive then
-        if checkStaff(plr) then
-            warn("⚠️ Phát hiện Staff: " .. plr.Name)
-            -- Nếu đang bật Auto-Leave thì thoát ngay
-            if autoLeaveActive then
-                TeleportService:Teleport(12345678, Player) -- Nơi bạn muốn trốn đến
-            end
-        end
-    end
-end
-
--- 1. Quét người chơi MỚI vào
-Players.PlayerAdded:Connect(handleStaff)
-
--- 2. Quét người chơi ĐANG CÓ MẶT (QUAN TRỌNG - Bổ sung mới)
-for _, plr in pairs(Players:GetPlayers()) do
-    if plr ~= Player then
-        handleStaff(plr)
-    end
-end
-
--- [FUNC] Chế Độ Ban Đêm
-local nightModeActive = false
-NightModeBtn.MouseButton1Click:Connect(function()
-    nightModeActive = not nightModeActive
-    NightModeBtn.Text = nightModeActive and "🌙 Chế Độ Ban Đêm: BẬT" or "🌙 Chế Độ Ban Đêm: TẮT"
-    NightModeBtn.BackgroundColor3 = nightModeActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(44, 62, 80)
-    Lighting.ClockTime = nightModeActive and 0 or 14
-end)
-
--- [FUNC] Chế Độ Tàng Hình (Ghost)
-local ghostActive = false
-GhostModeBtn.MouseButton1Click:Connect(function()
-    ghostActive = not ghostActive
-    GhostModeBtn.Text = ghostActive and "👻 Đang Tàng Hình..." or "👻 Chế Độ Tàng Hình: TẮT"
-    GhostModeBtn.BackgroundColor3 = ghostActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(127, 140, 141)
-    
-    local char = Player.Character
-    if char then
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") or part:IsA("Decal") then
-                part.Transparency = ghostActive and 1 or 0
-            end
-        end
-    end
-end)
-
--- [FUNC] Auto Clicker
-local autoClickActive = false
-AutoClickBtn.MouseButton1Click:Connect(function()
-    autoClickActive = not autoClickActive
-    AutoClickBtn.Text = autoClickActive and "🖱️ Auto Click: BẬT" or "🖱️ Auto Clicker: TẮT"
-    AutoClickBtn.BackgroundColor3 = autoClickActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(230, 126, 34)
-end)
-
-task.spawn(function()
-    while task.wait(0.1) do
-        if autoClickActive then
-            local tool = Player.Character and Player.Character:FindFirstChildOfClass("Tool")
-            if tool then tool:Activate() end
-        end
-    end
-end) 
-
 GodButton.MouseButton1Click:Connect(function()
     godMode = not godMode
     GodButton.Text = godMode and "🛡️ Chế Độ Bất Tử: BẬT" or "🛡️ Chế Độ Bất Tử: TẮT"
@@ -981,69 +755,6 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- [FUNC] X-Ray (Làm tường trở nên trong suốt)
-local xrayActive = false
-XRayBtn.MouseButton1Click:Connect(function()
-    xrayActive = not xrayActive
-    XRayBtn.Text = xrayActive and "🕶️ X-Ray: ĐANG BẬT" or "🕶️ X-Ray: TẮT"
-    
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and obj.Name ~= "HumanoidRootPart" then
-            if xrayActive then
-                if obj.Transparency < 0.5 then obj.Transparency = 0.5 end
-            else
-                obj.Transparency = 0 -- Trả về mặc định
-            end
-        end
-    end
-end)
-
--- [FUNC] Theo Dõi (Spectate)
-local spectateActive = false
-SpectateBtn.MouseButton1Click:Connect(function()
-    spectateActive = not spectateActive
-    SpectateBtn.Text = spectateActive and "👀 Đang theo dõi..." or "👀 Theo Dõi Người Khác: TẮT"
-    if not spectateActive then Camera.CameraSubject = Player.Character:FindFirstChildOfClass("Humanoid") end
-end)
-
-RunService.RenderStepped:Connect(function()
-    if spectateActive then
-        local target = getClosestPlayer() -- Sử dụng hàm getClosestPlayer có sẵn trong code của bạn
-        if target and target.Character and target.Character:FindFirstChildOfClass("Humanoid") then
-            Camera.CameraSubject = target.Character:FindFirstChildOfClass("Humanoid")
-        end
-    end
-end)
-
--- [FUNC] NPC ESP
-local npcEspActive = false
-local npcHighlights = {}
-
-NpcEspBtn.MouseButton1Click:Connect(function()
-    npcEspActive = not npcEspActive
-    NpcEspBtn.Text = npcEspActive and "🤖 ESP NPCs: BẬT" or "🤖 ESP NPCs: TẮT"
-    if not npcEspActive then
-        for _, h in pairs(npcHighlights) do h:Destroy() end
-        npcHighlights = {}
-    end
-end)
-
-RunService.Heartbeat:Connect(function()
-    if not npcEspActive then return end
-    for _, model in pairs(workspace:GetDescendants()) do
-        if model:IsA("Model") and model:FindFirstChildOfClass("Humanoid") and not Players:GetPlayerFromCharacter(model) then
-            if not model:FindFirstChild("NpcHighlight") then
-                local highlight = Instance.new("Highlight")
-                highlight.Name = "NpcHighlight"
-                highlight.FillColor = Color3.fromRGB(0, 255, 0)
-                highlight.Adornee = model
-                highlight.Parent = model
-                table.insert(npcHighlights, highlight)
-            end
-        end
-    end
-end) 
-
 -- [TROLL 3] Spam Chat
 SpamChatBtn.MouseButton1Click:Connect(function()
     spamChatActive = not spamChatActive
@@ -1073,57 +784,6 @@ task.spawn(function()
         end
     end
 end)
-
--- 1. Ping Checker (Dùng TextLabel thay vì Button cho chuyên nghiệp)
-    local PingLabel = Instance.new("TextLabel")
-    PingLabel.Parent = parentFrame
-    PingLabel.Size = UDim2.new(1, 0, 0, 30)
-    PingLabel.Text = "📡 Ping: Đang đo..."
-    PingLabel.BackgroundColor3 = Color3.fromRGB(127, 140, 141)
-    
-    task.spawn(function()
-        while task.wait(1) do
-            local ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
-            PingLabel.Text = "📡 Ping: " .. math.floor(ping) .. "ms"
-        end
-    end)
-
-    -- 2. Server Hopper (Dùng pcall để tránh lỗi nếu game chặn Teleport)
-    local HopperBtn = createMenuButton("🔄 Server Hopper", Color3.fromRGB(142, 68, 173))
-    HopperBtn.Parent = parentFrame
-    HopperBtn.MouseButton1Click:Connect(function()
-        local success, err = pcall(function()
-            TeleportService:Teleport(game.PlaceId, game.Players.LocalPlayer)
-        end)
-        if not success then warn("Hopper Error: " .. tostring(err)) end
-    end)
-
-    -- 3. FPS Booster (Sử dụng lệnh trực tiếp vào Lighting)
-    local fpsActive = false
-    local FPSBtn = createMenuButton("🚀 FPS Booster: TẮT", Color3.fromRGB(41, 128, 185))
-    FPSBtn.Parent = parentFrame
-    FPSBtn.MouseButton1Click:Connect(function()
-        fpsActive = not fpsActive
-        FPSBtn.Text = fpsActive and "🚀 FPS Booster: BẬT" or "🚀 FPS Booster: TẮT"
-        game:GetService("Lighting").GlobalShadows = not fpsActive
-    end)
-    
-    -- 4. Dọn Rác (Clean)
-    local cleanActive = false
-    local CleanBtn = createMenuButton("🧹 Dọn Rác: TẮT", Color3.fromRGB(231, 76, 60))
-    CleanBtn.Parent = parentFrame
-    CleanBtn.MouseButton1Click:Connect(function()
-        cleanActive = not cleanActive
-        CleanBtn.Text = cleanActive and "🧹 Đang dọn..." or "🧹 Dọn Rác: TẮT"
-        if cleanActive then
-            for _, obj in pairs(workspace:GetDescendants()) do
-                if obj:IsA("ParticleEmitter") or obj:IsA("Smoke") or obj:IsA("Fire") then
-                    obj:Destroy()
-                end
-            end
-        end
-    end)
-end
 
 ----------------------------------------------------
 -- CÁC CÔNG CỤ DỊCH CHUYỂN
