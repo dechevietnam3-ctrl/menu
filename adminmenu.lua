@@ -158,6 +158,12 @@ local npcEspActive = false
 local npcHitboxActive = false
 local isSpectating = false
 local isInvisible = false
+local fakeLagActive = false
+local bigHeadActive = false
+local fakeAdminActive = false
+local freezePlayerActive = false
+local soundSpamActive = false
+local ghostModeActive = false
 
 -- Trạng thái Troll mới
 local flingActive = false
@@ -192,7 +198,14 @@ local XrayButton       = createMenuButton("🧱 X-Ray (Nhìn Xuyên Tường): T
 local NpcEspBtn        = createMenuButton("👁️ ESP NPC: TẮT", Color3.fromRGB(241, 196, 15))
 local NpcHitboxBtn     = createMenuButton("⭕ Hitbox NPC: TẮT", Color3.fromRGB(211, 84, 0))
 local SpectateBtn      = createMenuButton("🔭 Xem Người Chơi (Spectate): TẮT", Color3.fromRGB(52, 152, 219))
-local InvisBtn         = createMenuButton("🕶️ Tàng Hình (Client): TẮT", Color3.fromRGB(155, 89, 182))
+local InvisBtn         = createMenuButton("🕶️ Tàng Hình (Client): TẮT", Color3.fromRGB(155, 89, 182)) 
+-- BỔ SUNG CÁC NÚT TROLL
+local FakeLagBtn       = createMenuButton("📶 Fake Lag (Gây giật lag ảo): TẮT", Color3.fromRGB(231, 76, 60))
+local BigHeadBtn       = createMenuButton("👤 Big Head (Đầu to): TẮT", Color3.fromRGB(155, 89, 182))
+local FakeAdminBtn     = createMenuButton("👑 Giả Danh Admin: TẮT", Color3.fromRGB(241, 196, 15))
+local FreezePlayerBtn  = createMenuButton("🧊 Đóng Băng Người Chơi: TẮT", Color3.fromRGB(52, 152, 219))
+local SoundSpamBtn     = createMenuButton("🔊 Spam Âm Thanh: TẮT", Color3.fromRGB(230, 126, 34))
+local GhostModeBtn     = createMenuButton("👻 Ghost Mode (Mờ người): TẮT", Color3.fromRGB(189, 195, 199))
 ----------------------------------------------------
 -- TẠO CÁC NÚT TROLL (MỚI)
 ----------------------------------------------------
@@ -489,6 +502,92 @@ RunService.RenderStepped:Connect(function()
         if targetPart then Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position) end
     end
 end)
+
+----------------------------------------------------
+-- LOGIC TROLL BỔ SUNG
+----------------------------------------------------
+
+-- 1. Fake Lag (Gây giật lag ảo bằng cách đóng băng tạm thời)
+FakeLagBtn.MouseButton1Click:Connect(function()
+    fakeLagActive = not fakeLagActive
+    FakeLagBtn.Text = fakeLagActive and "📶 Fake Lag: BẬT" or "📶 Fake Lag: TẮT"
+    FakeLagBtn.BackgroundColor3 = fakeLagActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(231, 76, 60)
+end)
+
+task.spawn(function()
+    while task.wait(0.1) do
+        if fakeLagActive and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+            Player.Character.HumanoidRootPart.Anchored = true
+            task.wait(0.1)
+            Player.Character.HumanoidRootPart.Anchored = false
+        end
+    end
+end)
+
+-- 2. Big Head (Đầu to)
+BigHeadBtn.MouseButton1Click:Connect(function()
+    bigHeadActive = not bigHeadActive
+    BigHeadBtn.Text = bigHeadActive and "👤 Big Head: BẬT" or "👤 Big Head: TẮT"
+    BigHeadBtn.BackgroundColor3 = bigHeadActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(155, 89, 182)
+    
+    if Player.Character and Player.Character:FindFirstChild("Head") then
+        Player.Character.Head.Size = bigHeadActive and Vector3.new(5, 5, 5) or Vector3.new(1, 1, 1)
+    end
+end)
+
+-- 3. Giả Danh Admin (Đổi màu tên hoặc tạo hiệu ứng - Ở đây mình làm hiệu ứng đổi màu tên)
+FakeAdminBtn.MouseButton1Click:Connect(function()
+    fakeAdminActive = not fakeAdminActive
+    FakeAdminBtn.Text = fakeAdminActive and "👑 Giả Admin: BẬT" or "👑 Giả Danh Admin: TẮT"
+    FakeAdminBtn.BackgroundColor3 = fakeAdminActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(241, 196, 15)
+end)
+
+-- 4. Đóng Băng Người Chơi (Bản thân)
+FreezePlayerBtn.MouseButton1Click:Connect(function()
+    freezePlayerActive = not freezePlayerActive
+    FreezePlayerBtn.Text = freezePlayerActive and "🧊 Đã đóng băng!" or "🧊 Đóng Băng Người Chơi: TẮT"
+    FreezePlayerBtn.BackgroundColor3 = freezePlayerActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(52, 152, 219)
+    
+    local hum = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.WalkSpeed = freezePlayerActive and 0 or 16
+        hum.JumpPower = freezePlayerActive and 0 or 50
+    end
+end)
+
+-- 5. Spam Âm Thanh (Yêu cầu có ID âm thanh, ở đây dùng ID mẫu)
+SoundSpamBtn.MouseButton1Click:Connect(function()
+    soundSpamActive = not soundSpamActive
+    SoundSpamBtn.Text = soundSpamActive and "🔊 Đang Spam..." or "🔊 Spam Âm Thanh: TẮT"
+    SoundSpamBtn.BackgroundColor3 = soundSpamActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(230, 126, 34)
+    
+    if soundSpamActive then
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://142667752" -- Thay ID âm thanh của bạn vào đây
+        sound.Looped = true
+        sound.Parent = Player.Character.Head
+        sound:Play()
+    else
+        if Player.Character:FindFirstChild("Head") and Player.Character.Head:FindFirstChild("Sound") then
+            Player.Character.Head.Sound:Destroy()
+        end
+    end
+end)
+
+-- 6. Ghost Mode (Mờ người)
+GhostModeBtn.MouseButton1Click:Connect(function()
+    ghostModeActive = not ghostModeActive
+    GhostModeBtn.Text = ghostModeActive and "👻 Ghost Mode: BẬT" or "👻 Ghost Mode: TẮT"
+    GhostModeBtn.BackgroundColor3 = ghostModeActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(189, 195, 199)
+    
+    if Player.Character then
+        for _, part in pairs(Player.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.Transparency = ghostModeActive and 0.6 or 0
+            end
+        end
+    end
+end) 
 
 TriggerBotBtn.MouseButton1Click:Connect(function()
     triggerBotActive = not triggerBotActive
