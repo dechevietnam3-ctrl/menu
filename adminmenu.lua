@@ -153,6 +153,11 @@ local antiKillActive = false
 local infiniteOxygenActive = false
 local fullBrightActive = false
 local originalAmbient, originalOutdoorAmbient
+local xrayActive = false 
+local npcEspActive = false
+local npcHitboxActive = false
+local isSpectating = false
+local isInvisible = false
 
 -- Trạng thái Troll mới
 local flingActive = false
@@ -183,7 +188,11 @@ local GodButton        = createMenuButton("🛡️ Chế Độ Bất Tử: TẮT
 local EspButton        = createMenuButton("👁️ Nhìn Xuyên Tường (ESP): TẮT", Color3.fromRGB(241, 196, 15))
 local InfOxygenBtn     = createMenuButton("🤿 Vô Hạn Ô-xy (Dưới nước): TẮT", Color3.fromRGB(34, 166, 179))
 local FullBrightBtn    = createMenuButton("💡 FullBright (Sáng Đêm): TẮT", Color3.fromRGB(241, 196, 15))
-
+local XrayButton       = createMenuButton("🧱 X-Ray (Nhìn Xuyên Tường): TẮT", Color3.fromRGB(127, 140, 141)) 
+local NpcEspBtn        = createMenuButton("👁️ ESP NPC: TẮT", Color3.fromRGB(241, 196, 15))
+local NpcHitboxBtn     = createMenuButton("⭕ Hitbox NPC: TẮT", Color3.fromRGB(211, 84, 0))
+local SpectateBtn      = createMenuButton("🔭 Xem Người Chơi (Spectate): TẮT", Color3.fromRGB(52, 152, 219))
+local InvisBtn         = createMenuButton("🕶️ Tàng Hình (Client): TẮT", Color3.fromRGB(155, 89, 182))
 ----------------------------------------------------
 -- TẠO CÁC NÚT TROLL (MỚI)
 ----------------------------------------------------
@@ -409,6 +418,19 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
+XrayButton.MouseButton1Click:Connect(function()
+    xrayActive = not xrayActive
+    XrayButton.Text = xrayActive and "🧱 X-Ray: BẬT" or "🧱 X-Ray: TẮT"
+    XrayButton.BackgroundColor3 = xrayActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(127, 140, 141)
+    
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and not obj:FindFirstAncestorOfClass("Model") then
+            obj.Transparency = xrayActive and 0.5 or 0
+            obj.CanCollide = not xrayActive
+        end
+    end
+end) 
+
 local function getClosestPlayer()
     local closestPlayer = nil
     local shortestDistance = math.huge
@@ -484,6 +506,32 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+RunService.Heartbeat:Connect(function()
+    if not npcEspActive then return end
+    for _, model in pairs(workspace:GetDescendants()) do
+        if model:IsA("Model") and model:FindFirstChild("Humanoid") and not Players:GetPlayerFromCharacter(model) then
+            if not model:FindFirstChild("NpcHighlight") then
+                local h = Instance.new("Highlight")
+                h.Name = "NpcHighlight"
+                h.FillColor = Color3.fromRGB(0, 255, 255)
+                h.Parent = model
+            end
+        end
+    end
+end)
+
+-- Logic Hitbox NPC:
+RunService.RenderStepped:Connect(function()
+    if not npcHitboxActive then return end
+    for _, model in pairs(workspace:GetDescendants()) do
+        if model:IsA("Model") and model:FindFirstChild("HumanoidRootPart") and not Players:GetPlayerFromCharacter(model) then
+            model.HumanoidRootPart.Size = Vector3.new(10, 10, 10)
+            model.HumanoidRootPart.Transparency = 0.5
+            model.HumanoidRootPart.CanCollide = false
+        end
+    end
+end) 
+
 -- [ĐÃ SỬA LỖI] Anti-Kill không bị nảy liên tục vô hạn
 local antiKillCooldown = false
 AntiKillBtn.MouseButton1Click:Connect(function()
@@ -523,6 +571,20 @@ RunService.Stepped:Connect(function()
         end
     end
 end)
+
+SpectateBtn.MouseButton1Click:Connect(function()
+    isSpectating = not isSpectating
+    if isSpectating then
+        local target = getClosestPlayer() -- Sử dụng hàm getClosestPlayer bạn đã có
+        if target and target.Character then
+            Camera.CameraSubject = target.Character:FindFirstChild("Humanoid")
+            SpectateBtn.Text = "🔭 Đang Xem: " .. target.Name
+        end
+    else
+        Camera.CameraSubject = Player.Character:FindFirstChild("Humanoid")
+        SpectateBtn.Text = "🔭 Xem Người Chơi: TẮT"
+    end
+end) 
 
 local flySpeed = 60
 local bodyGyro, bodyVelocity
@@ -566,6 +628,19 @@ FlyButton.MouseButton1Click:Connect(function()
         if bodyGyro then bodyGyro:Destroy() end
         if bodyVelocity then bodyVelocity:Destroy() end
     end
+end)
+
+InvisBtn.MouseButton1Click:Connect(function()
+    isInvisible = not isInvisible
+    local char = Player.Character
+    if char then
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") or part:IsA("Decal") then
+                part.Transparency = isInvisible and 1 or 0
+            end
+        end
+    end
+    InvisBtn.Text = isInvisible and "🕶️ Tàng Hình: BẬT" or "🕶️ Tàng Hình: TẮT"
 end)
 
 WaterWalkBtn.MouseButton1Click:Connect(function()
