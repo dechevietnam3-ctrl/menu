@@ -88,11 +88,13 @@ Container.CanvasSize = UDim2.new(0, 0, 0, 1800)
 Container.ScrollBarThickness = 4
 Container.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
 
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Parent = Container
-UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 8)
+-- THÊM ĐOẠN NÀY VÀO
+local GridLayout = Instance.new("UIGridLayout")
+GridLayout.Parent = Container
+GridLayout.CellSize = UDim2.new(0, 140, 0, 40) -- Kích thước mỗi nút (Rộng, Cao)
+GridLayout.CellPadding = UDim2.new(0, 10, 0, 10) -- Khoảng cách giữa các nút
+GridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+GridLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 -- HÀM TẠO NÚT
 local function createMenuButton(text, color)
@@ -189,6 +191,9 @@ local AutoClickBtn     = createMenuButton("🖱️ Auto Clicker: TẮT", Color3.
 local BringAllBtn      = createMenuButton("👥 Kéo Mọi Người Đến Đây", Color3.fromRGB(155, 89, 182))
 local RainbowBtn       = createMenuButton("🌈 Nhân Vật Cầu Vồng: TẮT", Color3.fromRGB(231, 76, 60))
 local FreezeBtn        = createMenuButton("❄️ Đóng Băng Nhân Vật: TẮT", Color3.fromRGB(52, 152, 219)) 
+local XRayBtn          = createMenuButton("🕶️ X-Ray (Nhìn xuyên tường): TẮT", Color3.fromRGB(52, 73, 94))
+local SpectateBtn      = createMenuButton("👀 Theo Dõi Người Khác: TẮT", Color3.fromRGB(155, 89, 182))
+local NpcEspBtn        = createMenuButton("🤖 ESP NPCs: TẮT", Color3.fromRGB(243, 156, 18)) 
 
 ----------------------------------------------------
 -- TẠO CÁC NÚT TROLL (MỚI)
@@ -858,6 +863,69 @@ RunService.Heartbeat:Connect(function()
         end
     end
 end)
+
+-- [FUNC] X-Ray (Làm tường trở nên trong suốt)
+local xrayActive = false
+XRayBtn.MouseButton1Click:Connect(function()
+    xrayActive = not xrayActive
+    XRayBtn.Text = xrayActive and "🕶️ X-Ray: ĐANG BẬT" or "🕶️ X-Ray: TẮT"
+    
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and obj.Name ~= "HumanoidRootPart" then
+            if xrayActive then
+                if obj.Transparency < 0.5 then obj.Transparency = 0.5 end
+            else
+                obj.Transparency = 0 -- Trả về mặc định
+            end
+        end
+    end
+end)
+
+-- [FUNC] Theo Dõi (Spectate)
+local spectateActive = false
+SpectateBtn.MouseButton1Click:Connect(function()
+    spectateActive = not spectateActive
+    SpectateBtn.Text = spectateActive and "👀 Đang theo dõi..." or "👀 Theo Dõi Người Khác: TẮT"
+    if not spectateActive then Camera.CameraSubject = Player.Character:FindFirstChildOfClass("Humanoid") end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if spectateActive then
+        local target = getClosestPlayer() -- Sử dụng hàm getClosestPlayer có sẵn trong code của bạn
+        if target and target.Character and target.Character:FindFirstChildOfClass("Humanoid") then
+            Camera.CameraSubject = target.Character:FindFirstChildOfClass("Humanoid")
+        end
+    end
+end)
+
+-- [FUNC] NPC ESP
+local npcEspActive = false
+local npcHighlights = {}
+
+NpcEspBtn.MouseButton1Click:Connect(function()
+    npcEspActive = not npcEspActive
+    NpcEspBtn.Text = npcEspActive and "🤖 ESP NPCs: BẬT" or "🤖 ESP NPCs: TẮT"
+    if not npcEspActive then
+        for _, h in pairs(npcHighlights) do h:Destroy() end
+        npcHighlights = {}
+    end
+end)
+
+RunService.Heartbeat:Connect(function()
+    if not npcEspActive then return end
+    for _, model in pairs(workspace:GetDescendants()) do
+        if model:IsA("Model") and model:FindFirstChildOfClass("Humanoid") and not Players:GetPlayerFromCharacter(model) then
+            if not model:FindFirstChild("NpcHighlight") then
+                local highlight = Instance.new("Highlight")
+                highlight.Name = "NpcHighlight"
+                highlight.FillColor = Color3.fromRGB(0, 255, 0)
+                highlight.Adornee = model
+                highlight.Parent = model
+                table.insert(npcHighlights, highlight)
+            end
+        end
+    end
+end) 
 
 -- [TROLL 3] Spam Chat
 SpamChatBtn.MouseButton1Click:Connect(function()
