@@ -5,6 +5,7 @@ local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService") -- Cần thiết cho Auto-Rejoin/Leave
 local GuiService = game:GetService("GuiService")          -- Cần thiết để bắt lỗi Kick
+local Stats = game:GetService("Stats") 
 
 local Player = Players.LocalPlayer
 local Mouse = Player:GetMouse()
@@ -33,12 +34,12 @@ ToggleButton.ZIndex = 10
 
 local ToggleCorner = Instance.new("UICorner")
 ToggleCorner.CornerRadius = UDim.new(1,0)
-ToggleCorner.Parent = ToggleButton
+ToggleCorner.Parent = ToggleButton 
 
 -- Frame chính
 local Frame = Instance.new("Frame")
 Frame.Parent = ScreenGui
-Frame.Size = UDim2.new(0, 350, 0, 500)
+Frame.Size = UDim2.new(0, 500, 0, 500)
 Frame.Position = UDim2.new(0.5, -175, 0.5, -250)
 Frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 Frame.ClipsDescendants = true
@@ -1072,6 +1073,57 @@ task.spawn(function()
         end
     end
 end)
+
+-- 1. Ping Checker (Dùng TextLabel thay vì Button cho chuyên nghiệp)
+    local PingLabel = Instance.new("TextLabel")
+    PingLabel.Parent = parentFrame
+    PingLabel.Size = UDim2.new(1, 0, 0, 30)
+    PingLabel.Text = "📡 Ping: Đang đo..."
+    PingLabel.BackgroundColor3 = Color3.fromRGB(127, 140, 141)
+    
+    task.spawn(function()
+        while task.wait(1) do
+            local ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+            PingLabel.Text = "📡 Ping: " .. math.floor(ping) .. "ms"
+        end
+    end)
+
+    -- 2. Server Hopper (Dùng pcall để tránh lỗi nếu game chặn Teleport)
+    local HopperBtn = createMenuButton("🔄 Server Hopper", Color3.fromRGB(142, 68, 173))
+    HopperBtn.Parent = parentFrame
+    HopperBtn.MouseButton1Click:Connect(function()
+        local success, err = pcall(function()
+            TeleportService:Teleport(game.PlaceId, game.Players.LocalPlayer)
+        end)
+        if not success then warn("Hopper Error: " .. tostring(err)) end
+    end)
+
+    -- 3. FPS Booster (Sử dụng lệnh trực tiếp vào Lighting)
+    local fpsActive = false
+    local FPSBtn = createMenuButton("🚀 FPS Booster: TẮT", Color3.fromRGB(41, 128, 185))
+    FPSBtn.Parent = parentFrame
+    FPSBtn.MouseButton1Click:Connect(function()
+        fpsActive = not fpsActive
+        FPSBtn.Text = fpsActive and "🚀 FPS Booster: BẬT" or "🚀 FPS Booster: TẮT"
+        game:GetService("Lighting").GlobalShadows = not fpsActive
+    end)
+    
+    -- 4. Dọn Rác (Clean)
+    local cleanActive = false
+    local CleanBtn = createMenuButton("🧹 Dọn Rác: TẮT", Color3.fromRGB(231, 76, 60))
+    CleanBtn.Parent = parentFrame
+    CleanBtn.MouseButton1Click:Connect(function()
+        cleanActive = not cleanActive
+        CleanBtn.Text = cleanActive and "🧹 Đang dọn..." or "🧹 Dọn Rác: TẮT"
+        if cleanActive then
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("ParticleEmitter") or obj:IsA("Smoke") or obj:IsA("Fire") then
+                    obj:Destroy()
+                end
+            end
+        end
+    end)
+end
 
 ----------------------------------------------------
 -- CÁC CÔNG CỤ DỊCH CHUYỂN
