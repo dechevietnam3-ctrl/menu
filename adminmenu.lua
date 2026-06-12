@@ -37,9 +37,10 @@ ToggleCorner.CornerRadius = UDim.new(1,0)
 ToggleCorner.Parent = ToggleButton 
 
 -- Frame chính
+-- Frame chính
 local Frame = Instance.new("Frame")
 Frame.Parent = ScreenGui
-Frame.Size = UDim2.new(0, 500, 0, 500)
+Frame.Size = UDim2.new(0, 350, 0, 500)
 Frame.Position = UDim2.new(0.5, -175, 0.5, -250)
 Frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 Frame.ClipsDescendants = true
