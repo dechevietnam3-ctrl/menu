@@ -2,7 +2,7 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local Lighting = game:GetService("Lighting") -- Thêm để phục vụ tính năng FullBright
+local Lighting = game:GetService("Lighting")
 
 local Player = Players.LocalPlayer
 local Mouse = Player:GetMouse()
@@ -46,7 +46,7 @@ local FrameCorner = Instance.new("UICorner")
 FrameCorner.CornerRadius = UDim.new(0, 16)
 FrameCorner.Parent = Frame
 
--- Thanh tiêu đề (Dùng để kéo menu)
+-- Thanh tiêu đề
 local TitleBar = Instance.new("TextButton")
 TitleBar.Size = UDim2.new(1, 0, 0, 50)
 TitleBar.BackgroundTransparency = 1
@@ -78,13 +78,13 @@ local CloseCorner = Instance.new("UICorner")
 CloseCorner.CornerRadius = UDim.new(0, 6)
 CloseCorner.Parent = CloseButton
 
--- Thùng chứa cuộn
+-- Thùng chứa cuộn (Đã tăng CanvasSize để chứa các nút Troll mới)
 local Container = Instance.new("ScrollingFrame")
 Container.Parent = Frame
 Container.Size = UDim2.new(1, -10, 1, -65)
 Container.Position = UDim2.new(0, 5, 0, 55)
 Container.BackgroundTransparency = 1
-Container.CanvasSize = UDim2.new(0, 0, 0, 1500) -- Tăng thêm kích thước cuộn để chứa nút mới
+Container.CanvasSize = UDim2.new(0, 0, 0, 1800) 
 Container.ScrollBarThickness = 4
 Container.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
 
@@ -94,7 +94,7 @@ UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Padding = UDim.new(0, 8)
 
--- HÀM TẠO NÚT CÓ HIỆU ỨNG TỐI ƯU
+-- HÀM TẠO NÚT
 local function createMenuButton(text, color)
     local btn = Instance.new("TextButton")
     btn.Parent = Container
@@ -149,14 +149,17 @@ local godMode = false
 local espActive = false
 local triggerBotActive = false
 local antiKillActive = false
-
--- Biến cho các tính năng mới thêm
 local infiniteOxygenActive = false
 local fullBrightActive = false
 local originalAmbient, originalOutdoorAmbient
 
+-- Trạng thái Troll mới
+local flingActive = false
+local annoyActive = false
+local spamChatActive = false
+
 ----------------------------------------------------
--- TẠO CÁC NÚT CHỨC NĂNG
+-- TẠO CÁC NÚT CHỨC NĂNG CƠ BẢN
 ----------------------------------------------------
 local SpeedButton      = createMenuButton("⚡ Tốc Độ: Bình Thường", Color3.fromRGB(230, 126, 34))
 local JumpButton       = createMenuButton("🦘 Sức Nhảy: Bình Thường", Color3.fromRGB(46, 204, 113))
@@ -177,12 +180,17 @@ local FovButton        = createMenuButton("👁️ Góc Nhìn (FOV): Thường (
 local AutoFarmBtn      = createMenuButton("💰 Tự Động Nhặt Đồ Gần Đây: TẮT", Color3.fromRGB(243, 156, 18))
 local GodButton        = createMenuButton("🛡️ Chế Độ Bất Tử: TẮT", Color3.fromRGB(192, 57, 43))
 local EspButton        = createMenuButton("👁️ Nhìn Xuyên Tường (ESP): TẮT", Color3.fromRGB(241, 196, 15))
-
--- [MỚI] Các nút chức năng mới thêm vào menu
 local InfOxygenBtn     = createMenuButton("🤿 Vô Hạn Ô-xy (Dưới nước): TẮT", Color3.fromRGB(34, 166, 179))
 local FullBrightBtn    = createMenuButton("💡 FullBright (Sáng Đêm): TẮT", Color3.fromRGB(241, 196, 15))
-local DeleteToolBtn    = createMenuButton("💥 Nhận Tool Click Xóa Vật Thể", Color3.fromRGB(211, 84, 0))
 
+----------------------------------------------------
+-- TẠO CÁC NÚT TROLL (MỚI)
+----------------------------------------------------
+local FlingBtn         = createMenuButton("🌪️ Fling (Xoay Chạm Văng Địch): TẮT", Color3.fromRGB(230, 50, 50))
+local AnnoyBtn         = createMenuButton("🐒 Đu Bám Người Khác: TẮT", Color3.fromRGB(155, 89, 182))
+local SpamChatBtn      = createMenuButton("💬 Chat Spammer: TẮT", Color3.fromRGB(52, 152, 219))
+
+local DeleteToolBtn    = createMenuButton("💥 Nhận Tool Click Xóa Vật Thể", Color3.fromRGB(211, 84, 0))
 local TeleportToolBtn  = createMenuButton("🛠️ Nhận Tool Click Dịch Chuyển", Color3.fromRGB(39, 174, 96)) 
 local TeleportBtn      = createMenuButton("🌀 Dịch Chuyển Đến Người Chơi", Color3.fromRGB(26, 188, 156))
 local InfoClickTP      = createMenuButton("⌨️ Mẹo: RightShift ẩn menu / Ctrl+Click TP", Color3.fromRGB(80, 80, 80))
@@ -191,11 +199,9 @@ local InfoClickTP      = createMenuButton("⌨️ Mẹo: RightShift ẩn menu / 
 local function applyCharacterStats(character)
     local humanoid = character:WaitForChild("Humanoid", 5)
     if not humanoid then return end
-    
     task.wait(0.2)
     if speedState == 1 then humanoid.WalkSpeed = 50
     elseif speedState == 2 then humanoid.WalkSpeed = 150 end
-    
     if jumpState then humanoid.UseJumpPower = true; humanoid.JumpPower = 150 end
 end
 
@@ -215,10 +221,7 @@ local function setMenuVisible(visible)
     else
         local tw = TweenService:Create(Frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0, 350, 0, 0)})
         tw:Play()
-        tw.Completed:Connect(function() 
-            Frame.Visible = false 
-            menuTweening = false 
-        end)
+        tw.Completed:Connect(function() Frame.Visible = false; menuTweening = false end)
     end
 end
 
@@ -226,7 +229,7 @@ end
 -- LOGIC CHI TIẾT CÁC CHỨC NĂNG
 ----------------------------------------------------
 
--- 1. Siêu Tốc Độ
+-- Tốc Độ & Nhảy
 SpeedButton.MouseButton1Click:Connect(function()
     speedState = (speedState + 1) % 3
     local humanoid = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
@@ -242,7 +245,6 @@ SpeedButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- 2. Siêu Nhảy
 JumpButton.MouseButton1Click:Connect(function()
     jumpState = not jumpState
     local humanoid = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
@@ -255,7 +257,7 @@ JumpButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- 3. Nhảy kép & Nhảy vô hạn
+-- Nhảy kép & Vô hạn
 local hasDoubleJumped = false
 local lastJumpTime = 0
 
@@ -310,16 +312,11 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- 4. Kill Aura
+-- Các chức năng khác (Giữ nguyên từ bản gốc của bạn)
 KillAuraButton.MouseButton1Click:Connect(function()
     killAuraActive = not killAuraActive
-    if killAuraActive then
-        KillAuraButton.Text = "⚔️ Kill Aura: BẬT"
-        KillAuraButton.BackgroundColor3 = Color3.fromRGB(39, 174, 96)
-    else
-        KillAuraButton.Text = "⚔️ Kill Aura: TẮT"
-        KillAuraButton.BackgroundColor3 = Color3.fromRGB(142, 68, 173)
-    end
+    KillAuraButton.Text = killAuraActive and "⚔️ Kill Aura: BẬT" or "⚔️ Kill Aura (Bán kính 20): TẮT"
+    KillAuraButton.BackgroundColor3 = killAuraActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(142, 68, 173)
 end)
 
 task.spawn(function()
@@ -327,13 +324,10 @@ task.spawn(function()
         if killAuraActive and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
             local myRoot = Player.Character.HumanoidRootPart
             local tool = Player.Character:FindFirstChildOfClass("Tool")
-            
             for _, p in pairs(Players:GetPlayers()) do
                 if p ~= Player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                     local targetHumanoid = p.Character:FindFirstChildOfClass("Humanoid")
-                    local targetRoot = p.Character.HumanoidRootPart
-                    
-                    if targetHumanoid and targetHumanoid.Health > 0 and (targetRoot.Position - myRoot.Position).Magnitude <= 20 then
+                    if targetHumanoid and targetHumanoid.Health > 0 and (p.Character.HumanoidRootPart.Position - myRoot.Position).Magnitude <= 20 then
                         if tool then tool:Activate() end
                         targetHumanoid:TakeDamage(5) 
                     end
@@ -343,20 +337,15 @@ task.spawn(function()
     end
 end)
 
--- 5. Hitbox Expander
 HitboxButton.MouseButton1Click:Connect(function()
     hitboxActive = not hitboxActive
-    if hitboxActive then
-        HitboxButton.Text = "⭕ Phóng To Hitbox Địch: BẬT"
-        HitboxButton.BackgroundColor3 = Color3.fromRGB(39, 174, 96)
-    else
-        HitboxButton.Text = "⭕ Phóng To Hitbox Địch: TẮT"
-        HitboxButton.BackgroundColor3 = Color3.fromRGB(211, 84, 0)
+    HitboxButton.Text = hitboxActive and "⭕ Phóng To Hitbox Địch: BẬT" or "⭕ Phóng To Hitbox Địch: TẮT"
+    HitboxButton.BackgroundColor3 = hitboxActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(211, 84, 0)
+    if not hitboxActive then
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= Player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                local hrp = p.Character.HumanoidRootPart
-                hrp.Size = Vector3.new(2, 2, 1)
-                hrp.Transparency = 1
+                p.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
+                p.Character.HumanoidRootPart.Transparency = 1
             end
         end
     end
@@ -377,15 +366,11 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 6. Spin Bot
 SpinBotButton.MouseButton1Click:Connect(function()
     spinBotActive = not spinBotActive
-    if spinBotActive then
-        SpinBotButton.Text = "🔄 Spin Bot: BẬT"
-        SpinBotButton.BackgroundColor3 = Color3.fromRGB(39, 174, 96)
-    else
-        SpinBotButton.Text = "🔄 Spin Bot: TẮT"
-        SpinBotButton.BackgroundColor3 = Color3.fromRGB(22, 160, 133)
+    SpinBotButton.Text = spinBotActive and "🔄 Spin Bot: BẬT" or "🔄 Spin Bot (Xoay tròn): TẮT"
+    SpinBotButton.BackgroundColor3 = spinBotActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(22, 160, 133)
+    if not spinBotActive then
         local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
         if root and root:FindFirstChild("SpinningObject") then root.SpinningObject:Destroy() end
     end
@@ -394,7 +379,6 @@ end)
 RunService.Heartbeat:Connect(function()
     local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
-    
     if spinBotActive then
         local spin = root:FindFirstChild("SpinningObject")
         if not spin then
@@ -404,21 +388,13 @@ RunService.Heartbeat:Connect(function()
             spin.Parent = root
         end
         spin.AngularVelocity = Vector3.new(0, 65, 0)
-    else
-        if root:FindFirstChild("SpinningObject") then root.SpinningObject:Destroy() end
     end
 end)
 
--- 7. Chống té ngã (Anti-Ragdoll)
 AntiRagdollBtn.MouseButton1Click:Connect(function()
     antiRagdollActive = not antiRagdollActive
-    if antiRagdollActive then
-        AntiRagdollBtn.Text = "🏋️ Chống Té Ngã: BẬT"
-        AntiRagdollBtn.BackgroundColor3 = Color3.fromRGB(39, 174, 96)
-    else
-        AntiRagdollBtn.Text = "🏋️ Chống Té Ngã: TẮT"
-        AntiRagdollBtn.BackgroundColor3 = Color3.fromRGB(127, 140, 141)
-    end
+    AntiRagdollBtn.Text = antiRagdollActive and "🏋️ Chống Té Ngã: BẬT" or "🏋️ Chống Té Ngã: TẮT"
+    AntiRagdollBtn.BackgroundColor3 = antiRagdollActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(127, 140, 141)
 end)
 
 RunService.Heartbeat:Connect(function()
@@ -432,13 +408,11 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Hàm tìm người chơi gần nhất cho Aimbot và Camlock
 local function getClosestPlayer()
     local closestPlayer = nil
     local shortestDistance = math.huge
     local myRoot = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
     if not myRoot then return nil end
-    
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= Player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
             local targetHum = p.Character:FindFirstChildOfClass("Humanoid")
@@ -454,7 +428,6 @@ local function getClosestPlayer()
     return closestPlayer
 end
 
--- 8. Aimbot
 AimbotButton.MouseButton1Click:Connect(function()
     aimbotActive = not aimbotActive
     if aimbotActive then
@@ -469,7 +442,6 @@ AimbotButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- 9. Cam Lock
 CamLockBtn.MouseButton1Click:Connect(function()
     camLockActive = not camLockActive
     if camLockActive then
@@ -489,22 +461,14 @@ RunService.RenderStepped:Connect(function()
     local target = ((aimbotActive and isRightClickPressed) or camLockActive) and getClosestPlayer()
     if target and target.Character then
         local targetPart = target.Character:FindFirstChild("Head") or target.Character:FindFirstChild("HumanoidRootPart")
-        if targetPart then
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
-        end
+        if targetPart then Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position) end
     end
 end)
 
--- 10. TRIGGER BOT
 TriggerBotBtn.MouseButton1Click:Connect(function()
     triggerBotActive = not triggerBotActive
-    if triggerBotActive then
-        TriggerBotBtn.Text = "🤖 Trigger Bot: BẬT"
-        TriggerBotBtn.BackgroundColor3 = Color3.fromRGB(39, 174, 96)
-    else
-        TriggerBotBtn.Text = "🤖 Trigger Bot: TẮT"
-        TriggerBotBtn.BackgroundColor3 = Color3.fromRGB(41, 128, 185)
-    end
+    TriggerBotBtn.Text = triggerBotActive and "🤖 Trigger Bot: BẬT" or "🤖 Trigger Bot: TẮT"
+    TriggerBotBtn.BackgroundColor3 = triggerBotActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(41, 128, 185)
 end)
 
 RunService.RenderStepped:Connect(function()
@@ -519,42 +483,34 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 11. CHỐNG CHẾT KHẨN CẤP (ANTI-KILL) - Đã sửa lỗi hiển thị nhầm Text ở đây
+-- [ĐÃ SỬA LỖI] Anti-Kill không bị nảy liên tục vô hạn
+local antiKillCooldown = false
 AntiKillBtn.MouseButton1Click:Connect(function()
     antiKillActive = not antiKillActive
-    if antiKillActive then
-        AntiKillBtn.Text = "🚨 Chống Chết: BẬT"
-        AntiKillBtn.BackgroundColor3 = Color3.fromRGB(39, 174, 96)
-    else
-        AntiKillBtn.Text = "🚨 Chống Chết: TẮT"
-        AntiKillBtn.BackgroundColor3 = Color3.fromRGB(192, 41, 43)
-    end
+    AntiKillBtn.Text = antiKillActive and "🚨 Chống Chết: BẬT" or "🚨 Chống Chết khẩn cấp: TẮT"
+    AntiKillBtn.BackgroundColor3 = antiKillActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(192, 41, 43)
 end)
 
 RunService.Heartbeat:Connect(function()
-    if not antiKillActive then return end
+    if not antiKillActive or antiKillCooldown then return end
     local char = Player.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     local root = char and char:FindFirstChild("HumanoidRootPart")
     if hum and root and hum.Health > 0 and hum.Health < (hum.MaxHealth * 0.25) then
+        antiKillCooldown = true
         root.CFrame = root.CFrame + Vector3.new(0, 150, 0)
         root.Velocity = Vector3.new(0,0,0)
-        AntiKillBtn.Text = "🚨 ĐÃ CỨU NGUY KHẨN CẤP!" -- Đã sửa lỗi hiển thị nhầm sang TriggerBotBtn
-        task.wait(1)
-        AntiKillBtn.Text = antiKillActive and "🚨 Chống Chết: BẬT" or "🚨 Chống Chết: TẮT"
+        AntiKillBtn.Text = "🚨 ĐÃ CỨU NGUY KHẨN CẤP!" 
+        task.wait(2)
+        AntiKillBtn.Text = antiKillActive and "🚨 Chống Chết: BẬT" or "🚨 Chống Chết khẩn cấp: TẮT"
+        antiKillCooldown = false
     end
 end)
 
--- 12. Đi xuyên tường (Noclip)
 NoclipButton.MouseButton1Click:Connect(function()
     noclip = not noclip
-    if noclip then
-        NoclipButton.Text = "👻 Đi Xuyên Tường: BẬT"
-        NoclipButton.BackgroundColor3 = Color3.fromRGB(39, 174, 96)
-    else
-        NoclipButton.Text = "👻 Đi Xuyên Tường: TẮT"
-        NoclipButton.BackgroundColor3 = Color3.fromRGB(155, 89, 182)
-    end
+    NoclipButton.Text = noclip and "👻 Đi Xuyên Tường: BẬT" or "👻 Đi Xuyên Tường: TẮT"
+    NoclipButton.BackgroundColor3 = noclip and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(155, 89, 182)
 end)
 
 RunService.Stepped:Connect(function()
@@ -567,13 +523,11 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- 13. Chế độ Bay v4
 local flySpeed = 60
 local bodyGyro, bodyVelocity
 FlyButton.MouseButton1Click:Connect(function()
     flying = not flying
     local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-    
     if flying and root then
         FlyButton.Text = "🕊️ Chế Độ Bay v4: BẬT (E để Boost)"
         FlyButton.BackgroundColor3 = Color3.fromRGB(39, 174, 96)
@@ -593,7 +547,6 @@ FlyButton.MouseButton1Click:Connect(function()
             while flying and root and root.Parent do
                 RunService.RenderStepped:Wait()
                 local direction = Vector3.new(0, 0, 0)
-                
                 if UserInputService:IsKeyDown(Enum.KeyCode.W) then direction = direction + Camera.CFrame.LookVector end
                 if UserInputService:IsKeyDown(Enum.KeyCode.S) then direction = direction - Camera.CFrame.LookVector end
                 if UserInputService:IsKeyDown(Enum.KeyCode.A) then direction = direction - Camera.CFrame.RightVector end
@@ -602,7 +555,6 @@ FlyButton.MouseButton1Click:Connect(function()
                 if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then direction = direction - Vector3.new(0, 1, 0) end
                 
                 local currentSpeed = UserInputService:IsKeyDown(Enum.KeyCode.E) and (flySpeed * 3) or flySpeed
-                
                 bodyGyro.cframe = Camera.CFrame
                 bodyVelocity.velocity = direction.Magnitude > 0 and direction.Unit * currentSpeed or Vector3.new(0, 0, 0)
             end
@@ -615,16 +567,10 @@ FlyButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- 14. Chạy trên nước (Jesus Mode)
 WaterWalkBtn.MouseButton1Click:Connect(function()
     waterWalkActive = not waterWalkActive
-    if waterWalkActive then
-        WaterWalkBtn.Text = "🌊 Chạy Trên Nước: BẬT"
-        WaterWalkBtn.BackgroundColor3 = Color3.fromRGB(39, 174, 96)
-    else
-        WaterWalkBtn.Text = "🌊 Chạy Trên Nước: TẮT"
-        WaterWalkBtn.BackgroundColor3 = Color3.fromRGB(41, 128, 185)
-    end
+    WaterWalkBtn.Text = waterWalkActive and "🌊 Chạy Trên Nước: BẬT" or "🌊 Chạy Trên Nước: TẮT"
+    WaterWalkBtn.BackgroundColor3 = waterWalkActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(41, 128, 185)
 end)
 
 RunService.Heartbeat:Connect(function()
@@ -647,34 +593,18 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- 15. Góc nhìn rộng (FOV Changer)
 FovButton.MouseButton1Click:Connect(function()
     fovState = (fovState + 1) % 4
-    if fovState == 0 then
-        Camera.FieldOfView = 70
-        FovButton.Text = "👁️ Góc Nhìn (FOV): Thường (70)"
-    elseif fovState == 1 then
-        Camera.FieldOfView = 90
-        FovButton.Text = "👁️ Góc Nhìn (FOV): Rộng (90)"
-    elseif fovState == 2 then
-        Camera.FieldOfView = 110
-        FovButton.Text = "👁️ Góc Nhìn (FOV): Pro (110)"
-    else
-        Camera.FieldOfView = 130
-        FovButton.Text = "👁️ Góc Nhìn (FOV): Hack (130)"
-    end
+    if fovState == 0 then Camera.FieldOfView = 70; FovButton.Text = "👁️ Góc Nhìn (FOV): Thường (70)"
+    elseif fovState == 1 then Camera.FieldOfView = 90; FovButton.Text = "👁️ Góc Nhìn (FOV): Rộng (90)"
+    elseif fovState == 2 then Camera.FieldOfView = 110; FovButton.Text = "👁️ Góc Nhìn (FOV): Pro (110)"
+    else Camera.FieldOfView = 130; FovButton.Text = "👁️ Góc Nhìn (FOV): Hack (130)" end
 end)
 
--- 16. Tự động nhặt đồ xung quanh (Auto Farm) - Đã tối ưu lọc khoảng cách an toàn
 AutoFarmBtn.MouseButton1Click:Connect(function()
     autoFarmActive = not autoFarmActive
-    if autoFarmActive then
-        AutoFarmBtn.Text = "💰 Tự Động Nhặt Đồ: BẬT"
-        AutoFarmBtn.BackgroundColor3 = Color3.fromRGB(39, 174, 96)
-    else
-        AutoFarmBtn.Text = "💰 Tự Động Nhặt Đồ: TẮT"
-        AutoFarmBtn.BackgroundColor3 = Color3.fromRGB(243, 156, 18)
-    end
+    AutoFarmBtn.Text = autoFarmActive and "💰 Tự Động Nhặt Đồ: BẬT" or "💰 Tự Động Nhặt Đồ Gần Đây: TẮT"
+    AutoFarmBtn.BackgroundColor3 = autoFarmActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(243, 156, 18)
 end)
 
 task.spawn(function()
@@ -685,9 +615,7 @@ task.spawn(function()
                 if object:IsA("BasePart") and object.Parent then
                     local name = object.Name:lower()
                     if name:find("coin") or name:find("token") or name:find("item") or name:find("drop") or name:find("diamond") then
-                        local pcallSuccess, distance = pcall(function()
-                            return (object.Position - myRoot.Position).Magnitude
-                        end)
+                        local pcallSuccess, distance = pcall(function() return (object.Position - myRoot.Position).Magnitude end)
                         if pcallSuccess and distance and distance <= 60 then
                             object.CFrame = myRoot.CFrame
                         end
@@ -698,16 +626,10 @@ task.spawn(function()
     end
 end)
 
--- 17. Bất Tử (God Mode)
 GodButton.MouseButton1Click:Connect(function()
     godMode = not godMode
-    if godMode then
-        GodButton.Text = "🛡️ Chế Độ Bất Tử: BẬT"
-        GodButton.BackgroundColor3 = Color3.fromRGB(39, 174, 96)
-    else
-        GodButton.Text = "🛡️ Chế Độ Bất Tử: TẮT"
-        GodButton.BackgroundColor3 = Color3.fromRGB(192, 57, 43)
-    end
+    GodButton.Text = godMode and "🛡️ Chế Độ Bất Tử: BẬT" or "🛡️ Chế Độ Bất Tử: TẮT"
+    GodButton.BackgroundColor3 = godMode and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(192, 57, 43)
 end)
 
 RunService.Heartbeat:Connect(function()
@@ -717,9 +639,7 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- 18. Wallhack ESP - Đã sửa lỗi rò rỉ RAM khi Reset nhân vật
 local espStorage = {}
-
 local function removeESP(p)
     if espStorage[p] then
         pcall(function() espStorage[p]:Destroy() end)
@@ -729,23 +649,15 @@ end
 
 EspButton.MouseButton1Click:Connect(function()
     espActive = not espActive
-    if espActive then
-        EspButton.Text = "👁️ Nhìn Xuyên Tường (ESP): BẬT"
-        EspButton.BackgroundColor3 = Color3.fromRGB(39, 174, 96)
-    else
-        EspButton.Text = "👁️ Nhìn Xuyên Tường (ESP): TẮT"
-        EspButton.BackgroundColor3 = Color3.fromRGB(241, 196, 15)
-        for p, _ in pairs(espStorage) do
-            removeESP(p)
-        end
-    end
+    EspButton.Text = espActive and "👁️ Nhìn Xuyên Tường (ESP): BẬT" or "👁️ Nhìn Xuyên Tường (ESP): TẮT"
+    EspButton.BackgroundColor3 = espActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(241, 196, 15)
+    if not espActive then for p, _ in pairs(espStorage) do removeESP(p) end end
 end)
 
 local function applyESP(p)
     if not espActive then return end
     if p == Player then return end
-    
-    removeESP(p) -- Clear cái cũ nếu tồn tại
+    removeESP(p)
     if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
         local highlight = Instance.new("Highlight")
         highlight.Name = "AdminESP"
@@ -763,71 +675,35 @@ RunService.Heartbeat:Connect(function()
     if not espActive then return end
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= Player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            if not espStorage[p] or not espStorage[p].Parent then
-                applyESP(p)
-            end
+            if not espStorage[p] or not espStorage[p].Parent then applyESP(p) end
         end
     end
 end)
 
--- Lắng nghe sự kiện để tránh lỗi RAM cũ
-Players.PlayerAdded:Connect(function(p)
-    p.CharacterAdded:Connect(function()
-        task.wait(0.5)
-        if espActive then applyESP(p) end
-    end)
-end)
+Players.PlayerAdded:Connect(function(p) p.CharacterAdded:Connect(function() task.wait(0.5); if espActive then applyESP(p) end end) end)
+for _, p in pairs(Players:GetPlayers()) do p.CharacterAdded:Connect(function() task.wait(0.5); if espActive then applyESP(p) end end) end
+Players.PlayerRemoving:Connect(function(p) removeESP(p) end)
 
-for _, p in pairs(Players:GetPlayers()) do
-    p.CharacterAdded:Connect(function()
-        task.wait(0.5)
-        if espActive then applyESP(p) end
-    end)
-end
-
-Players.PlayerRemoving:Connect(function(p)
-    removeESP(p)
-end)
-
-
-----------------------------------------------------
--- LOGIC CÁC TÍNH NĂNG MỚI ĐƯỢC THÊM VÀO
-----------------------------------------------------
-
--- [MỚI 1] Vô Hạn Ô-xy (Bơi không lo hết hơi)
 InfOxygenBtn.MouseButton1Click:Connect(function()
     infiniteOxygenActive = not infiniteOxygenActive
-    if infiniteOxygenActive then
-        InfOxygenBtn.Text = "🤿 Vô Hạn Ô-xy: BẬT"
-        InfOxygenBtn.BackgroundColor3 = Color3.fromRGB(39, 174, 96)
-    else
-        InfOxygenBtn.Text = "🤿 Vô Hạn Ô-xy: TẮT"
-        InfOxygenBtn.BackgroundColor3 = Color3.fromRGB(34, 166, 179)
-    end
+    InfOxygenBtn.Text = infiniteOxygenActive and "🤿 Vô Hạn Ô-xy: BẬT" or "🤿 Vô Hạn Ô-xy (Dưới nước): TẮT"
+    InfOxygenBtn.BackgroundColor3 = infiniteOxygenActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(34, 166, 179)
 end)
 
 RunService.Heartbeat:Connect(function()
     if infiniteOxygenActive and Player.Character then
-        -- Khóa thuộc tính lặn bình thường của Roblox (nếu có dùng cơ chế mặc định)
         local data = Player.Character:FindFirstChild("Oxygen") or Player.Character:FindFirstChild("Air")
-        if data and data:IsA("ValueBase") then
-            data.Value = 100
-        end
+        if data and data:IsA("ValueBase") then data.Value = 100 end
     end
 end)
 
--- [MỚI 2] FullBright (Hack sáng bản đồ phá bóng tối)
 originalAmbient = Lighting.Ambient
 originalOutdoorAmbient = Lighting.OutdoorAmbient
-
 FullBrightBtn.MouseButton1Click:Connect(function()
     fullBrightActive = not fullBrightActive
-    if fullBrightActive then
-        FullBrightBtn.Text = "💡 FullBright: BẬT"
-        FullBrightBtn.BackgroundColor3 = Color3.fromRGB(39, 174, 96)
-    else
-        FullBrightBtn.Text = "💡 FullBright: TẮT"
-        FullBrightBtn.BackgroundColor3 = Color3.fromRGB(241, 196, 15)
+    FullBrightBtn.Text = fullBrightActive and "💡 FullBright: BẬT" or "💡 FullBright (Sáng Đêm): TẮT"
+    FullBrightBtn.BackgroundColor3 = fullBrightActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(241, 196, 15)
+    if not fullBrightActive then
         Lighting.Ambient = originalAmbient
         Lighting.OutdoorAmbient = originalOutdoorAmbient
     end
@@ -840,7 +716,77 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- [MỚI 3] Tool Xóa Vật Thể Khi Click Chuột
+----------------------------------------------------
+-- LOGIC TROLL MỚI THÊM VÀO
+----------------------------------------------------
+
+-- [TROLL 1] Fling (Cối Xay Gió)
+FlingBtn.MouseButton1Click:Connect(function()
+    flingActive = not flingActive
+    FlingBtn.Text = flingActive and "🌪️ Fling (Xoay Siêu Tốc): BẬT" or "🌪️ Fling (Xoay Chạm Văng Địch): TẮT"
+    FlingBtn.BackgroundColor3 = flingActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(230, 50, 50)
+end)
+
+RunService.Stepped:Connect(function()
+    if flingActive and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+        local root = Player.Character.HumanoidRootPart
+        -- Tạo lực xoay ảo ảnh hưởng đến Physics của đối thủ khi va chạm
+        root.RotVelocity = Vector3.new(0, 50000, 0)
+    end
+end)
+
+-- [TROLL 2] Đu Bám Người Khác
+AnnoyBtn.MouseButton1Click:Connect(function()
+    annoyActive = not annoyActive
+    AnnoyBtn.Text = annoyActive and "🐒 Đu Bám Người Khác: BẬT" or "🐒 Đu Bám Người Khác: TẮT"
+    AnnoyBtn.BackgroundColor3 = annoyActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(155, 89, 182)
+end)
+
+RunService.Heartbeat:Connect(function()
+    if annoyActive then
+        local target = getClosestPlayer()
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+                -- Dịch chuyển và "ngồi" trên đầu mục tiêu
+                Player.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0)
+            end
+        end
+    end
+end)
+
+-- [TROLL 3] Spam Chat
+SpamChatBtn.MouseButton1Click:Connect(function()
+    spamChatActive = not spamChatActive
+    SpamChatBtn.Text = spamChatActive and "💬 Chat Spammer: BẬT" or "💬 Chat Spammer: TẮT"
+    SpamChatBtn.BackgroundColor3 = spamChatActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(52, 152, 219)
+end)
+
+task.spawn(function()
+    while task.wait(2.5) do
+        if spamChatActive then
+            local messages = {
+                "Bạn đang bị troller bởi Chủ server!",
+                "Owner Admin Menu V6.2 Pro Max quá xịn!",
+                "Lag quá à? Do mình múa quạt đó!"
+            }
+            local msg = messages[math.random(1, #messages)]
+            
+            -- Tương thích cả TextChatService (mới) và DefaultChatSystem (cũ)
+            pcall(function()
+                if game:GetService("TextChatService").ChatVersion == Enum.ChatVersion.TextChatService then
+                    local channel = game:GetService("TextChatService").TextChannels:FindFirstChild("RBXGeneral")
+                    if channel then channel:SendAsync(msg) end
+                elseif game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents") then
+                    game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(msg, "All")
+                end
+            end)
+        end
+    end
+end)
+
+----------------------------------------------------
+-- CÁC CÔNG CỤ DỊCH CHUYỂN
+----------------------------------------------------
 DeleteToolBtn.MouseButton1Click:Connect(function()
     local backpack = Player:FindFirstChildOfClass("Backpack")
     if backpack then
@@ -850,13 +796,11 @@ DeleteToolBtn.MouseButton1Click:Connect(function()
             DeleteToolBtn.Text = "💥 Nhận Tool Click Xóa Vật Thể"
             return
         end
-        
         local tool = Instance.new("Tool")
         tool.Name = "Deleter Tool"
         tool.RequiresHandle = false
         tool.Activated:Connect(function()
             if Mouse.Target and not Mouse.Target:IsA("Terrain") then
-                -- Tránh xóa nhầm người chơi khác gây lỗi logic game
                 if not Mouse.Target:FindFirstAncestorOfClass("Model"):FindFirstChildOfClass("Humanoid") then
                     Mouse.Target:Destroy()
                 end
@@ -869,11 +813,6 @@ DeleteToolBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-----------------------------------------------------
--- CÁC CÔNG CỤ DỊCH CHUYỂN CŨ
-----------------------------------------------------
-
--- Nhận Tool Click Dịch Chuyển
 TeleportToolBtn.MouseButton1Click:Connect(function()
     local backpack = Player:FindFirstChildOfClass("Backpack")
     if backpack then
@@ -883,7 +822,6 @@ TeleportToolBtn.MouseButton1Click:Connect(function()
             TeleportToolBtn.Text = "🛠️ Nhận Tool Click Dịch Chuyển"
             return
         end
-        
         local tool = Instance.new("Tool")
         tool.Name = "Teleport Tool"
         tool.RequiresHandle = false
@@ -899,7 +837,6 @@ TeleportToolBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Dịch chuyển tuần hoàn đến người chơi khác
 local tpIndex = 1
 TeleportBtn.MouseButton1Click:Connect(function()
     local targets = {}
@@ -908,7 +845,6 @@ TeleportBtn.MouseButton1Click:Connect(function()
             table.insert(targets, p)
         end
     end
-    
     if #targets > 0 then
         if tpIndex > #targets then tpIndex = 1 end
         local targetPlayer = targets[tpIndex]
@@ -924,7 +860,6 @@ TeleportBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Phím tắt Ctrl + Click dịch chuyển nhanh
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.UserInputType == Enum.UserInputType.MouseButton1 and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
@@ -934,23 +869,18 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Phím tắt RightShift Đóng/Mở mượt mà
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if input.KeyCode == Enum.KeyCode.RightShift then
-        setMenuVisible(not Frame.Visible)
-    end
+    if input.KeyCode == Enum.KeyCode.RightShift then setMenuVisible(not Frame.Visible) end
 end)
 
 ToggleButton.MouseButton1Click:Connect(function() setMenuVisible(not Frame.Visible) end)
 CloseButton.MouseButton1Click:Connect(function() setMenuVisible(false) end)
 
 ----------------------------------------------------
--- LED RGB & ĐỘNG CƠ KÉO MƯỢT MÀ KHÔNG LAG
+-- DRAG GUI MƯỢT MÀ
 ----------------------------------------------------
-RunService.RenderStepped:Connect(function()
-    Title.TextColor3 = Color3.fromHSV((tick() % 4) / 4, 0.8, 1)
-end)
+RunService.RenderStepped:Connect(function() Title.TextColor3 = Color3.fromHSV((tick() % 4) / 4, 0.8, 1) end)
 
 local dragToggle = nil
 local dragStart = nil
@@ -958,15 +888,8 @@ local startPos = nil
 
 TitleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragToggle = true
-        dragStart = input.Position
-        startPos = Frame.Position
-        
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragToggle = false
-            end
-        end)
+        dragToggle = true; dragStart = input.Position; startPos = Frame.Position
+        input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragToggle = false end end)
     end
 end)
 
