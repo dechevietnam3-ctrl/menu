@@ -418,15 +418,17 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
+-- Sửa lại đoạn code X-Ray
 XrayButton.MouseButton1Click:Connect(function()
     xrayActive = not xrayActive
     XrayButton.Text = xrayActive and "🧱 X-Ray: BẬT" or "🧱 X-Ray: TẮT"
     XrayButton.BackgroundColor3 = xrayActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(127, 140, 141)
     
     for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and not obj:FindFirstAncestorOfClass("Model") then
+        -- Chỉ nên áp dụng cho Part, không nên áp dụng cho Character của người chơi để tránh lỗi hiển thị
+        if obj:IsA("BasePart") and not obj:IsDescendantOf(Player.Character) then
+            -- Chỉ chỉnh sửa Transparency, KHÔNG đụng vào CanCollide
             obj.Transparency = xrayActive and 0.5 or 0
-            obj.CanCollide = not xrayActive
         end
     end
 end) 
@@ -628,7 +630,67 @@ FlyButton.MouseButton1Click:Connect(function()
         if bodyGyro then bodyGyro:Destroy() end
         if bodyVelocity then bodyVelocity:Destroy() end
     end
+end) 
+
+-- Logic ESP NPC
+NpcEspBtn.MouseButton1Click:Connect(function()
+    npcEspActive = not npcEspActive
+    NpcEspBtn.Text = npcEspActive and "👁️ ESP NPC: BẬT" or "👁️ ESP NPC: TẮT"
+    NpcEspBtn.BackgroundColor3 = npcEspActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(241, 196, 15)
+    
+    -- Tự động dọn dẹp highlight khi tắt
+    if not npcEspActive then
+        for _, descendant in pairs(workspace:GetDescendants()) do
+            if descendant.Name == "NpcHighlight" then
+                descendant:Destroy()
+            end
+        end
+    end
 end)
+
+-- Vòng lặp chạy ngầm (Heartbeat) cho ESP
+RunService.Heartbeat:Connect(function()
+    if not npcEspActive then return end
+    for _, model in pairs(workspace:GetDescendants()) do
+        if model:IsA("Model") and model:FindFirstChild("Humanoid") and not Players:GetPlayerFromCharacter(model) then
+            if not model:FindFirstChild("NpcHighlight") then
+                local h = Instance.new("Highlight")
+                h.Name = "NpcHighlight"
+                h.FillColor = Color3.fromRGB(0, 255, 255)
+                h.Parent = model
+            end
+        end
+    end
+end)
+
+-- Logic Hitbox NPC
+NpcHitboxBtn.MouseButton1Click:Connect(function()
+    npcHitboxActive = not npcHitboxActive
+    NpcHitboxBtn.Text = npcHitboxActive and "⭕ Hitbox NPC: BẬT" or "⭕ Hitbox NPC: TẮT"
+    NpcHitboxBtn.BackgroundColor3 = npcHitboxActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(211, 84, 0)
+    
+    -- Trả lại kích thước gốc khi tắt
+    if not npcHitboxActive then
+        for _, model in pairs(workspace:GetDescendants()) do
+            if model:IsA("Model") and model:FindFirstChild("HumanoidRootPart") and not Players:GetPlayerFromCharacter(model) then
+                model.HumanoidRootPart.Size = Vector3.new(2, 2, 1) -- Kích thước mặc định
+            end
+        end
+    end
+end)
+
+-- Vòng lặp chạy ngầm (RenderStepped) cho Hitbox
+RunService.RenderStepped:Connect(function()
+    if not npcHitboxActive then return end
+    for _, model in pairs(workspace:GetDescendants()) do
+        if model:IsA("Model") and model:FindFirstChild("HumanoidRootPart") and not Players:GetPlayerFromCharacter(model) then
+            local hrp = model.HumanoidRootPart
+            hrp.Size = Vector3.new(10, 10, 10)
+            hrp.Transparency = 0.5
+            hrp.CanCollide = false
+        end
+    end
+end) 
 
 InvisBtn.MouseButton1Click:Connect(function()
     isInvisible = not isInvisible
