@@ -164,6 +164,11 @@ local fakeAdminActive = false
 local freezePlayerActive = false
 local soundSpamActive = false
 local ghostModeActive = false
+local sitActive = false
+local layActive = false
+local loopDanceActive = false
+local invisibleHeadActive = false
+local currentDance = nil
 
 -- Trạng thái Troll mới
 local flingActive = false
@@ -199,6 +204,11 @@ local NpcEspBtn        = createMenuButton("👁️ ESP NPC: TẮT", Color3.fromR
 local NpcHitboxBtn     = createMenuButton("⭕ Hitbox NPC: TẮT", Color3.fromRGB(211, 84, 0))
 local SpectateBtn      = createMenuButton("🔭 Xem Người Chơi (Spectate): TẮT", Color3.fromRGB(52, 152, 219))
 local InvisBtn         = createMenuButton("🕶️ Tàng Hình (Client): TẮT", Color3.fromRGB(155, 89, 182)) 
+local SitBtn          = createMenuButton("🪑 Buộc Ngồi (Sit Anywhere): TẮT", Color3.fromRGB(155, 89, 182))
+local LayBtn          = createMenuButton("🛌 Buộc Nằm (Lay Down): TẮT", Color3.fromRGB(230, 126, 34))
+local LoopDanceBtn    = createMenuButton("💃 Nhảy Múa Liên Tục: TẮT", Color3.fromRGB(46, 204, 113))
+local InvisibleHead   = createMenuButton("👤 Tàng Hình Đầu: TẮT", Color3.fromRGB(44, 62, 80))
+
 -- BỔ SUNG CÁC NÚT TROLL
 local FakeLagBtn       = createMenuButton("📶 Fake Lag (Gây giật lag ảo): TẮT", Color3.fromRGB(231, 76, 60))
 local BigHeadBtn       = createMenuButton("👤 Big Head (Đầu to): TẮT", Color3.fromRGB(155, 89, 182))
@@ -358,7 +368,74 @@ task.spawn(function()
             end
         end
     end
+end) 
+
+----------------------------------------------------
+-- LOGIC TROLL BỔ SUNG (NGỒI, NẰM, MÚA, ĐẦU)
+----------------------------------------------------
+
+-- 1. Buộc Ngồi (Sit Anywhere)
+SitBtn.MouseButton1Click:Connect(function()
+    sitActive = not sitActive
+    SitBtn.Text = sitActive and "🪑 Buộc Ngồi: BẬT" or "🪑 Buộc Ngồi (Sit Anywhere): TẮT"
+    SitBtn.BackgroundColor3 = sitActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(155, 89, 182)
 end)
+
+RunService.Heartbeat:Connect(function()
+    if sitActive and Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
+        Player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Sitting)
+    end
+end)
+
+-- 2. Buộc Nằm (Lay Down)
+LayBtn.MouseButton1Click:Connect(function()
+    layActive = not layActive
+    LayBtn.Text = layActive and "🛌 Buộc Nằm: BẬT" or "🛌 Buộc Nằm (Lay Down): TẮT"
+    LayBtn.BackgroundColor3 = layActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(230, 126, 34)
+end)
+
+RunService.RenderStepped:Connect(function()
+    if layActive and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+        -- Xoay nhân vật để tạo hiệu ứng nằm
+        Player.Character.HumanoidRootPart.CFrame = Player.Character.HumanoidRootPart.CFrame * CFrame.Angles(math.rad(90), 0, 0)
+    end
+end)
+
+-- 3. Nhảy Múa Liên Tục
+LoopDanceBtn.MouseButton1Click:Connect(function()
+    loopDanceActive = not loopDanceActive
+    LoopDanceBtn.Text = loopDanceActive and "💃 Đang Múa..." or "💃 Nhảy Múa Liên Tục: TẮT"
+    LoopDanceBtn.BackgroundColor3 = loopDanceActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(46, 204, 113)
+    
+    local humanoid = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
+    if loopDanceActive and humanoid then
+        local animation = Instance.new("Animation")
+        animation.AnimationId = "rbxassetid://507777826" -- ID điệu nhảy mặc định
+        currentDance = humanoid:LoadAnimation(animation)
+        currentDance.Looped = true
+        currentDance:Play()
+    else
+        if currentDance then currentDance:Stop() end
+    end
+end)
+
+-- 4. Tàng Hình Đầu
+InvisibleHead.MouseButton1Click:Connect(function()
+    invisibleHeadActive = not invisibleHeadActive
+    InvisibleHead.Text = invisibleHeadActive and "👤 Đã tàng hình đầu!" or "👤 Tàng Hình Đầu: TẮT"
+    InvisibleHead.BackgroundColor3 = invisibleHeadActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(44, 62, 80)
+    
+    local head = Player.Character and Player.Character:FindFirstChild("Head")
+    if head then
+        head.Transparency = invisibleHeadActive and 1 or 0
+        -- Ẩn luôn khuôn mặt (Decal) trên đầu
+        for _, obj in pairs(head:GetChildren()) do
+            if obj:IsA("Decal") or obj:IsA("Texture") then
+                obj.Transparency = invisibleHeadActive and 1 or 0
+            end
+        end
+    end
+end) 
 
 HitboxButton.MouseButton1Click:Connect(function()
     hitboxActive = not hitboxActive
