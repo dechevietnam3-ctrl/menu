@@ -85,7 +85,7 @@ Container.Parent = Frame
 Container.Size = UDim2.new(1, -10, 1, -65)
 Container.Position = UDim2.new(0, 5, 0, 55)
 Container.BackgroundTransparency = 1
-Container.CanvasSize = UDim2.new(0, 0, 0, 1800) 
+Container.CanvasSize = UDim2.new(0, 0, 0, 2500) 
 Container.ScrollBarThickness = 4
 Container.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
 
