@@ -931,9 +931,16 @@ InvisBtn.MouseButton1Click:Connect(function()
     isInvisible = not isInvisible
     local char = Player.Character
     if char then
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") or part:IsA("Decal") then
-                part.Transparency = isInvisible and 1 or 0
+        for _, obj in pairs(char:GetDescendants()) do
+            -- 1. Xử lý da, quần áo, khuôn mặt (Decal)
+            if obj:IsA("BasePart") or obj:IsA("Decal") then
+                obj.Transparency = isInvisible and 1 or 0
+            end
+            
+            -- 2. Xử lý Phụ kiện (Tóc, mũ, kính, cánh...)
+            -- Phụ kiện cần tác động vào 'Handle' của nó
+            if obj:IsA("Accessory") and obj:FindFirstChild("Handle") then
+                obj.Handle.Transparency = isInvisible and 1 or 0
             end
         end
     end
