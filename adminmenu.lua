@@ -1,99 +1,167 @@
--- [PHẦN DỊCH VỤ VÀ HÀM CƠ BẢN GIỮ NGUYÊN]
+
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+
 local Player = Players.LocalPlayer
-local PlayerGui = Player:WaitForChild("PlayerGui")
+local Mouse = Player:GetMouse()
+local Camera = workspace.CurrentCamera
 
--- Hàm tạo nhóm
-local function createCategory(parent, name, color)
-    local section = Instance.new("Frame")
-    section.Parent = parent
-    section.Size = UDim2.new(1, -10, 0, 40)
-    section.BackgroundTransparency = 1
-    section.AutomaticSize = Enum.AutomaticSize.Y
-    
-    local header = Instance.new("TextButton", section)
-    header.Size = UDim2.new(1, 0, 0, 40)
-    header.Text = "▼ " .. name
-    header.BackgroundColor3 = color
-    header.TextColor3 = Color3.new(1, 1, 1)
-    header.Font = Enum.Font.GothamBold
-    header.TextSize = 14
-    header.AutoButtonColor = false
-    Instance.new("UICorner", header).CornerRadius = UDim.new(0, 8)
-    
-    local UIListLayout = Instance.new("UIListLayout", section)
-    UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    UIListLayout.Padding = UDim.new(0, 5)
-    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    
-    local expanded = true
-    header.MouseButton1Click:Connect(function()
-        expanded = not expanded
-        for _, child in pairs(section:GetChildren()) do
-            if child:IsA("TextButton") and child ~= header then
-                child.Visible = expanded
-            end
-        end
-        header.Text = expanded and ("▼ " .. name) or ("▶ " .. name)
-    end)
-    return section
-end
+-- Khử trùng lặp UI cũ chống tràn RAM
+local oldGui = Player:WaitForChild("PlayerGui"):FindFirstChild("PremiumMenu_v6_Ultra")
+if oldGui then oldGui:Destroy() end
 
--- Hàm tạo nút (Đã chỉnh sửa để nhận tham số parent)
-local function createMenuButton(parent, text, color)
-    local btn = Instance.new("TextButton", parent)
-    btn.Size = UDim2.new(0, 310, 0, 40)
-    btn.Text = text
-    btn.BackgroundColor3 = color or Color3.fromRGB(30, 30, 30)
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.Font = Enum.Font.GothamSemibold
-    btn.TextSize = 13
-    btn.AutoButtonColor = false
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
-    
-    -- Hiệu ứng hover & click
-    local originalColor = btn.BackgroundColor3
-    local hoverColor = Color3.new(math.min(originalColor.R + 0.15, 1), math.min(originalColor.G + 0.15, 1), math.min(originalColor.B + 0.15, 1))
-    
-    btn.MouseEnter:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = hoverColor}):Play() end)
-    btn.MouseLeave:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = originalColor}):Play() end)
-    btn.MouseButton1Down:Connect(function() TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(0, 300, 0, 38)}):Play() end)
-    btn.MouseButton1Up:Connect(function() TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(0, 310, 0, 40)}):Play() end)
-    
-    return btn
-end
-
--- [KHỞI TẠO UI CHÍNH]
-if PlayerGui:FindFirstChild("PremiumMenu_v6_Ultra") then PlayerGui.PremiumMenu_v6_Ultra:Destroy() end
-
-local ScreenGui = Instance.new("ScreenGui", PlayerGui)
+-- ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "PremiumMenu_v6_Ultra"
 ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = Player:WaitForChild("PlayerGui")
 
--- Toggle Button & Frame (Giữ nguyên cấu trúc)
-local Frame = Instance.new("Frame", ScreenGui)
+-- 3. NÚT TOGGLE (Mở Menu)
+local ToggleButton = Instance.new("TextButton", ScreenGui)
+ToggleButton.Size = UDim2.new(0, 55, 0, 55)
+ToggleButton.Position = UDim2.new(0, 20, 0.5, -27)
+ToggleButton.Text = "☰"
+ToggleButton.TextScaled = true
+ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+ToggleButton.TextColor3 = Color3.new(1, 1, 1)
+local ToggleCorner = Instance.new("UICorner", ToggleButton)
+ToggleCorner.CornerRadius = UDim.new(1, 0)
+
+ToggleButton.MouseButton1Click:Connect(function() Frame.Visible = not Frame.Visible end)
+
+-- Kéo thả ToggleButton
+local dragging, dragStart, startPos
+ToggleButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = ToggleButton.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        ToggleButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end end)
+
+-- Frame chính
+local Frame = Instance.new("Frame")
+Frame.Parent = ScreenGui
 Frame.Size = UDim2.new(0, 350, 0, 500)
 Frame.Position = UDim2.new(0.5, -175, 0.5, -250)
 Frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 16)
+Frame.ClipsDescendants = true
+Frame.Visible = true
 
-local Container = Instance.new("ScrollingFrame", Frame)
+local FrameCorner = Instance.new("UICorner")
+FrameCorner.CornerRadius = UDim.new(0, 16)
+FrameCorner.Parent = Frame
+
+-- Thanh tiêu đề
+local TitleBar = Instance.new("TextButton")
+TitleBar.Size = UDim2.new(1, 0, 0, 50)
+TitleBar.BackgroundTransparency = 1
+TitleBar.Text = ""
+TitleBar.Parent = Frame
+
+local Title = Instance.new("TextLabel")
+Title.Parent = TitleBar
+Title.Size = UDim2.new(1, 0, 1, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "⚡ OWNER ADMIN MENU V6.2 PRO MAX ⚡"
+Title.TextColor3 = Color3.fromRGB(0, 210, 255)
+Title.TextSize = 13
+Title.Font = Enum.Font.GothamBold
+
+-- Nút đóng (X)
+local CloseButton = Instance.new("TextButton")
+CloseButton.Parent = Frame
+CloseButton.Size = UDim2.new(0, 28, 0, 28)
+CloseButton.Position = UDim2.new(1, -38, 0, 11)
+CloseButton.Text = "✕"
+CloseButton.TextSize = 14
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.BackgroundColor3 = Color3.fromRGB(240, 50, 50)
+CloseButton.TextColor3 = Color3.new(1,1,1)
+CloseButton.ZIndex = 5
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 6)
+CloseCorner.Parent = CloseButton
+
+-- Thùng chứa cuộn (Đã nâng cấp)
+local Container = Instance.new("ScrollingFrame")
+Container.Parent = Frame
 Container.Size = UDim2.new(1, -10, 1, -65)
 Container.Position = UDim2.new(0, 5, 0, 55)
 Container.BackgroundTransparency = 1
-Container.AutomaticCanvasSize = Enum.AutomaticSize.Y
-Instance.new("UIListLayout", Container).Padding = UDim.new(0, 10)
-Instance.new("UIPadding", Container).PaddingTop = UDim.new(0, 10)
+Container.ScrollBarThickness = 6 -- Tăng nhẹ để dễ kéo hơn
+Container.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
+Container.BorderSizePixel = 0
 
--- [KHAI BÁO CÁC NHÓM SỬ DỤNG BIẾN]
-local CombatGroup = createCategory(Container, "⚔️ COMBAT", Color3.fromRGB(192, 57, 43))
-local btnAim = createMenuButton(CombatGroup, "🎯 Aimbot: OFF", Color3.fromRGB(50, 50, 50))
-local btnHit = createMenuButton(CombatGroup, "👁️ Hitbox: OFF", Color3.fromRGB(50, 50, 50))
+-- TỰ ĐỘNG CẬP NHẬT KÍCH THƯỚC (Nâng cấp quan trọng nhất)
+Container.AutomaticCanvasSize = Enum.AutomaticSize.Y 
 
-local MovementGroup = createCategory(Container, "🏃 MOVEMENT", Color3.fromRGB(41, 128, 185))
-local btnFly = createMenuButton(MovementGroup, "🕊️ Fly: OFF", Color3.fromRGB(50, 50, 50))
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = Container
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 10) -- Tăng padding cho thoáng mắt
+
+-- Thêm khoảng cách lề bên trong cho các nút (giúp nút không bị dính sát mép)
+local UIPadding = Instance.new("UIPadding")
+UIPadding.Parent = Container
+UIPadding.PaddingTop = UDim.new(0, 10)
+UIPadding.PaddingBottom = UDim.new(0, 10)
+local TweenService = game:GetService("TweenService")
+
+local function createMenuButton(text, color)
+    local btn = Instance.new("TextButton")
+    btn.Parent = Container
+    btn.Size = UDim2.new(0, 310, 0, 40)
+    btn.Text = text
+    btn.BackgroundColor3 = color or Color3.fromRGB(30, 30, 30)
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Font = Enum.Font.GothamSemibold
+    btn.TextSize = 13
+    btn.AutoButtonColor = false
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = btn
+    
+    local originalColor = btn.BackgroundColor3
+    -- Nâng độ sáng nhẹ cho hover
+    local hoverColor = Color3.new(
+        math.min(originalColor.R + 0.15, 1),
+        math.min(originalColor.G + 0.15, 1),
+        math.min(originalColor.B + 0.15, 1)
+    )
+    
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = hoverColor}):Play()
+    end)
+    
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = originalColor}):Play()
+    end)
+    
+    -- Thêm hiệu ứng nhấn (Nhấn xuống nút hơi nhỏ lại)
+    btn.MouseButton1Down:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(0, 300, 0, 38)}):Play()
+    end)
+    
+    btn.MouseButton1Up:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(0, 310, 0, 40)}):Play()
+    end)
+    
+    return btn
+end
 
 ----------------------------------------------------
 -- QUẢN LÝ TRẠNG THÁI TOÀN CỤC
