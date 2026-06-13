@@ -9,7 +9,7 @@ local Mouse = Player:GetMouse()
 local Camera = workspace.CurrentCamera
 
 -- Khử trùng lặp UI cũ chống tràn RAM
-local oldGui = Player:WaitForChild("PlayerGui"):FindFirstChild("PremiumMenu_v6_Ultra")
+local oldGui = Player:WaitForChild("PlayerGui"):FindFirstChild("Vinh")
 if oldGui then oldGui:Destroy() end
 
 -- ScreenGui
