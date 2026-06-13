@@ -323,74 +323,94 @@ JumpButton.MouseButton1Click:Connect(function()
     end
 end)
 
+----------------------------------------------------
+-- CẤU HÌNH FPS & TỐI ƯU HÓA (GỘP)
+----------------------------------------------------
 local Lighting = game:GetService("Lighting")
-local fpsBoostActive = false
-local particleConnection = nil -- Để quản lý sự kiện kết nối
+local Workspace = game:GetService("Workspace")
 
--- Cache cài đặt gốc
-local originalSettings = {
+-- Lưu trữ trạng thái gốc (Sử dụng Weak Table để chống tràn RAM)
+local originalParticleStates = setmetatable({}, {__mode = "k"})
+local originalDecalStates = setmetatable({}, {__mode = "k"})
+
+local originalLightingSettings = {
     GlobalShadows = Lighting.GlobalShadows,
     FogEnd = Lighting.FogEnd,
     Brightness = Lighting.Brightness
 }
 
--- Hàm kiểm tra xem vật thể có phải là hiệu ứng không
-local function isEffect(v)
-    return v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Beam")
-end
+local fpsBoostActive = false
+local removeDecalsActive = false
 
--- Hàm xử lý bật/tắt hạt
-local function setParticlesEnabled(enabled)
-    -- Nếu đang bật FPS Boost, chúng ta tắt các hiệu ứng (enabled = false)
-    local state = not enabled 
-    
-    for _, v in pairs(workspace:GetDescendants()) do
-        if isEffect(v) then
-            v.Enabled = state
-        end
-    end
-end
+-- Hàm hỗ trợ kiểm tra loại vật thể
+local function isParticle(v) return v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Beam") end
+local function isDecal(v) return v:IsA("Decal") or v:IsA("Texture") end
 
-local function setHitboxSize(char, isSmall)
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.Size = isSmall and Vector3.new(0.5, 0.5, 0.5) or Vector3.new(2, 2, 1)
-    end
-end
-
-
+----------------------------------------------------
+-- CHỨC NĂNG 1: TĂNG FPS (LIGHTING + PARTICLES)
+----------------------------------------------------
 FPSBoostBtn.MouseButton1Click:Connect(function()
     fpsBoostActive = not fpsBoostActive
-    
-    -- Update UI
-    FPSBoostBtn.Text = fpsBoostActive and "🚀 Tăng FPS: BẬT" or "🚀 Tăng FPS: TẮT"
+    FPSBoostBtn.Text = fpsBoostActive and "🚀 FPS: BẬT" or "🚀 FPS: TẮT"
     FPSBoostBtn.BackgroundColor3 = fpsBoostActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(155, 89, 182)
 
-    -- 1. Xử lý Lighting
-    Lighting.GlobalShadows = not fpsBoostActive and originalSettings.GlobalShadows or false
-    Lighting.FogEnd = not fpsBoostActive and originalSettings.FogEnd or 999999
-    Lighting.Brightness = not fpsBoostActive and originalSettings.Brightness or 2
+    -- Lighting
+    Lighting.GlobalShadows = not fpsBoostActive and originalLightingSettings.GlobalShadows or false
+    Lighting.FogEnd = not fpsBoostActive and originalLightingSettings.FogEnd or 999999
+    Lighting.Brightness = not fpsBoostActive and originalLightingSettings.Brightness or 2
     
-    -- 2. Xử lý Particles thông minh
+    -- Particles
     if fpsBoostActive then
-        setParticlesEnabled(true) -- Tắt các hạt hiện có
-        
-        -- Lắng nghe các hạt mới xuất hiện khi FPS Boost đang bật
-        particleConnection = workspace.DescendantAdded:Connect(function(v)
-            if isEffect(v) then
+        for _, v in pairs(Workspace:GetDescendants()) do
+            if isParticle(v) then
+                originalParticleStates[v] = v.Enabled
                 v.Enabled = false
             end
-        end)
-    else
-        -- Bật lại các hạt và ngắt kết nối lắng nghe
-        setParticlesEnabled(false) 
-        if particleConnection then
-            particleConnection:Disconnect()
-            particleConnection = nil
         end
+    else
+        for obj, state in pairs(originalParticleStates) do
+            if obj and obj.Parent then obj.Enabled = state end
+        end
+        table.clear(originalParticleStates)
     end
 end)
+
+----------------------------------------------------
+-- CHỨC NĂNG 2: ẨN HÌNH ẢNH (DECALS/TEXTURES)
+----------------------------------------------------
+RemoveDecalsBtn.MouseButton1Click:Connect(function()
+    removeDecalsActive = not removeDecalsActive
+    RemoveDecalsBtn.Text = removeDecalsActive and "🖼️ Ẩn Decals: BẬT" or "🖼️ Ẩn Decals: TẮT"
+    RemoveDecalsBtn.BackgroundColor3 = removeDecalsActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(155, 89, 182)
+
+    if removeDecalsActive then
+        for _, v in pairs(Workspace:GetDescendants()) do
+            if isDecal(v) then
+                originalDecalStates[v] = v.Transparency
+                v.Transparency = 1
+            end
+        end
+    else
+        for obj, oldTrans in pairs(originalDecalStates) do
+            if obj and obj.Parent then obj.Transparency = oldTrans end
+        end
+        table.clear(originalDecalStates)
+    end
+end)
+
+----------------------------------------------------
+-- LẮNG NGHE VẬT THỂ MỚI (TỐI ƯU GỘP)
+----------------------------------------------------
+Workspace.DescendantAdded:Connect(function(v)
+    -- Nếu đang bật FPS Boost thì tắt Particle mới
+    if fpsBoostActive and isParticle(v) then
+        v.Enabled = false
+    end
+    -- Nếu đang bật Hide Decals thì ẩn Decal mới
+    if removeDecalsActive and isDecal(v) then
+        v.Transparency = 1
+    end
+end) 
 
 -- Nhảy kép & Vô hạn
 local hasDoubleJumped = false
