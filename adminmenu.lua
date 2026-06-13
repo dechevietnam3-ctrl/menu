@@ -19,20 +19,35 @@ ScreenGui.Name = "PremiumMenu_v6_Ultra"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = Player:WaitForChild("PlayerGui")
 
--- Nút mở/tắt menu ngoài màn hình
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Parent = ScreenGui
+-- 3. NÚT TOGGLE (Mở Menu)
+local ToggleButton = Instance.new("TextButton", ScreenGui)
 ToggleButton.Size = UDim2.new(0, 55, 0, 55)
 ToggleButton.Position = UDim2.new(0, 20, 0.5, -27)
 ToggleButton.Text = "☰"
 ToggleButton.TextScaled = true
 ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
-ToggleButton.TextColor3 = Color3.new(1,1,1)
-ToggleButton.ZIndex = 10
+ToggleButton.TextColor3 = Color3.new(1, 1, 1)
+local ToggleCorner = Instance.new("UICorner", ToggleButton)
+ToggleCorner.CornerRadius = UDim.new(1, 0)
 
-local ToggleCorner = Instance.new("UICorner")
-ToggleCorner.CornerRadius = UDim.new(1,0)
-ToggleCorner.Parent = ToggleButton
+ToggleButton.MouseButton1Click:Connect(function() Frame.Visible = not Frame.Visible end)
+
+-- Kéo thả ToggleButton
+local dragging, dragStart, startPos
+ToggleButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = ToggleButton.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        ToggleButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end end)
 
 -- Frame chính
 local Frame = Instance.new("Frame")
