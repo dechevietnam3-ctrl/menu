@@ -205,7 +205,7 @@ local layActive = false
 local loopDanceActive = false
 local invisibleHeadActive = false
 local currentDance = nil
-local fpsBoostActive = false
+
 
 -- Trạng thái Troll mới
 local flingActive = false
@@ -220,7 +220,7 @@ local JumpButton       = createMenuButton("🦘 Sức Nhảy: Bình Thường", 
 local DoubleJumpBtn    = createMenuButton("🚀 Nhảy Kép: TẮT", Color3.fromRGB(44, 62, 80)) 
 local InfJumpButton    = createMenuButton("🌌 Nhảy Vô Hạn: TẮT", Color3.fromRGB(52, 73, 94)) 
 local KillAuraButton   = createMenuButton("⚔️ Kill Aura (Bán kính 20): TẮT", Color3.fromRGB(142, 68, 173)) 
-local FPSBoostBtn      = createMenuButton("🚀 Tăng FPS (Tối ưu hóa): TẮT", Color3.fromRGB(155, 89, 182))
+
 local HitboxButton     = createMenuButton("⭕ Phóng To Hitbox Địch: TẮT", Color3.fromRGB(211, 84, 0))
 local TeamEspBtn       = createMenuButton("👥 ESP Đồng đội: TẮT", Color3.fromRGB(46, 204, 113))
 local EnemyEspBtn      = createMenuButton("💀 ESP Địch: TẮT", Color3.fromRGB(231, 76, 60))
@@ -348,78 +348,7 @@ DoubleJumpBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-local Lighting = game:GetService("Lighting")
-local Workspace = game:GetService("Workspace")
 
-local fpsBoostActive = false
-local particleConnection = nil
--- Bảng lưu trữ trạng thái gốc để khôi phục sau này
-local originalParticleStates = {} 
-
--- Cache cài đặt gốc
-local originalSettings = {
-    GlobalShadows = Lighting.GlobalShadows,
-    FogEnd = Lighting.FogEnd,
-    Brightness = Lighting.Brightness
-}
-
-local function isEffect(v)
-    return v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Beam")
-end
-
--- Hàm cập nhật hiệu ứng thông minh
-local function toggleParticles(shouldDisable)
-    if shouldDisable then
-        for _, v in pairs(Workspace:GetDescendants()) do
-            if isEffect(v) then
-                -- Lưu lại trạng thái gốc trước khi tắt
-                originalParticleStates[v] = v.Enabled
-                v.Enabled = false
-            end
-        end
-    else
-        -- Khôi phục trạng thái gốc (nếu đã lưu) hoặc mặc định là true
-        for obj, state in pairs(originalParticleStates) do
-            if obj and obj.Parent then -- Kiểm tra object còn tồn tại
-                obj.Enabled = state
-            end
-        end
-        table.clear(originalParticleStates) -- Dọn dẹp bộ nhớ
-    end
-end
-
-FPSBoostBtn.MouseButton1Click:Connect(function()
-    fpsBoostActive = not fpsBoostActive
-    
-    -- Update UI
-    FPSBoostBtn.Text = fpsBoostActive and "🚀 Tăng FPS: BẬT" or "🚀 Tăng FPS: TẮT"
-    FPSBoostBtn.BackgroundColor3 = fpsBoostActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(155, 89, 182)
-
-    -- 1. Xử lý Lighting
-    Lighting.GlobalShadows = not fpsBoostActive and originalSettings.GlobalShadows or false
-    Lighting.FogEnd = not fpsBoostActive and originalSettings.FogEnd or 999999
-    Lighting.Brightness = not fpsBoostActive and originalSettings.Brightness or 2
-    
-    -- 2. Xử lý Particles
-    if fpsBoostActive then
-        toggleParticles(true)
-        
-        -- Lắng nghe vật thể mới
-        particleConnection = Workspace.DescendantAdded:Connect(function(v)
-            if isEffect(v) then
-                -- Lưu trạng thái vào bảng để sau này phục hồi
-                originalParticleStates[v] = v.Enabled
-                v.Enabled = false
-            end
-        end) 
-    else
-        if particleConnection then
-            particleConnection:Disconnect()
-            particleConnection = nil
-        end
-        toggleParticles(false)
-    end
-end)
 
 InfJumpButton.MouseButton1Click:Connect(function()
     infJumpActive = not infJumpActive
