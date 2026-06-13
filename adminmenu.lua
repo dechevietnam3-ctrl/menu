@@ -457,34 +457,58 @@ InvisibleHead.MouseButton1Click:Connect(function()
     end
 end) 
 
-HitboxButton.MouseButton1Click:Connect(function()
-    hitboxActive = not hitboxActive
-    HitboxButton.Text = hitboxActive and "⭕ Phóng To Hitbox Địch: BẬT" or "⭕ Phóng To Hitbox Địch: TẮT"
-    HitboxButton.BackgroundColor3 = hitboxActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(211, 84, 0)
-    if not hitboxActive then
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= Player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                p.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
-                p.Character.HumanoidRootPart.Transparency = 1
-            end
-        end
-    end
-end)
+-- Khai báo biến cần thiết (đặt ở đầu script của bạn)
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local hitboxActive = false
 
-RunService.RenderStepped:Connect(function()
+-- HÀM CẬP NHẬT HITBOX
+local function updateHitboxes()
     if not hitboxActive then return end
+    
     for _, p in pairs(Players:GetPlayers()) do
-        if p ~= Player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            local hrp = p.Character.HumanoidRootPart
-            if hrp.Size.X < 10 then 
+        if p ~= Player and p.Character then
+            local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+            if hrp and hrp.Size.X < 10 then -- Chỉ cập nhật nếu chưa phóng to
                 hrp.Size = Vector3.new(12, 12, 12)
                 hrp.Transparency = 0.75
                 hrp.Color = Color3.fromRGB(255, 0, 0)
-                hrp.CanCollide = false
+                hrp.CanCollide = false 
             end
         end
     end
+end
+
+-- XỬ LÝ NÚT BẤM
+HitboxButton.MouseButton1Click:Connect(function()
+    hitboxActive = not hitboxActive
+    
+    -- Cập nhật giao diện nút
+    HitboxButton.Text = hitboxActive and "⭕ Phóng To Hitbox Địch: BẬT" or "⭕ Phóng To Hitbox Địch: TẮT"
+    HitboxButton.BackgroundColor3 = hitboxActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(211, 84, 0)
+    
+    -- Nếu TẮT thì reset lại tất cả
+    if not hitboxActive then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= Player and p.Character then
+                local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    hrp.Size = Vector3.new(2, 2, 1)
+                    hrp.Transparency = 1
+                    hrp.Color = Color3.fromRGB(255, 255, 255)
+                    hrp.CanCollide = true
+                end
+            end
+        end
+    else
+        -- Nếu BẬT thì chạy quét ngay lập tức
+        updateHitboxes()
+    end
 end)
+
+-- Tối ưu: Dùng Heartbeat thay vì RenderStepped (nhẹ hơn)
+RunService.Heartbeat:Connect(updateHitboxes)
 
 SpinBotButton.MouseButton1Click:Connect(function()
     spinBotActive = not spinBotActive
