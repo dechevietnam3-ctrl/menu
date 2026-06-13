@@ -171,6 +171,8 @@ local doubleJumpActive = false
 local infJumpActive = false
 local killAuraActive = false
 local hitboxActive = false
+local teamEspActive = false
+local enemyEspActive = false
 local spinBotActive = false
 local antiRagdollActive = false
 local aimbotActive = false
@@ -218,6 +220,8 @@ local DoubleJumpBtn    = createMenuButton("🚀 Nhảy Kép: TẮT", Color3.from
 local InfJumpButton    = createMenuButton("🌌 Nhảy Vô Hạn: TẮT", Color3.fromRGB(52, 73, 94)) 
 local KillAuraButton   = createMenuButton("⚔️ Kill Aura (Bán kính 20): TẮT", Color3.fromRGB(142, 68, 173)) 
 local HitboxButton     = createMenuButton("⭕ Phóng To Hitbox Địch: TẮT", Color3.fromRGB(211, 84, 0))
+local TeamEspBtn       = createMenuButton("👥 ESP Đồng đội: TẮT", Color3.fromRGB(46, 204, 113))
+local EnemyEspBtn      = createMenuButton("💀 ESP Địch: TẮT", Color3.fromRGB(231, 76, 60))
 local SpinBotButton    = createMenuButton("🔄 Spin Bot (Xoay tròn): TẮT", Color3.fromRGB(22, 160, 133)) 
 local AntiRagdollBtn   = createMenuButton("🏋️ Chống Té Ngã: TẮT", Color3.fromRGB(127, 140, 141))
 local AimbotButton     = createMenuButton("🎯 Khóa Mục Tiêu (R-Click): TẮT", Color3.fromRGB(231, 76, 60))
@@ -403,6 +407,72 @@ task.spawn(function()
         end
     end
 end) 
+
+-- Hàm dọn dẹp tất cả ESP cũ
+local function cleanupAllESP()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p.Character and p.Character:FindFirstChild("AdminESP") then
+            p.Character.AdminESP:Destroy()
+        end
+    end
+end
+
+-- Logic nút bấm (cập nhật)
+TeamEspBtn.MouseButton1Click:Connect(function()
+    teamEspActive = not teamEspActive
+    TeamEspBtn.Text = teamEspActive and "👥 ESP Đồng đội: BẬT" or "👥 ESP Đồng đội: TẮT"
+    TeamEspBtn.BackgroundColor3 = teamEspActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(46, 204, 113)
+    if not teamEspActive then cleanupAllESP() end -- Dọn dẹp khi tắt
+end)
+
+EnemyEspBtn.MouseButton1Click:Connect(function()
+    enemyEspActive = not enemyEspActive
+    EnemyEspBtn.Text = enemyEspActive and "💀 ESP Địch: BẬT" or "💀 ESP Địch: TẮT"
+    EnemyEspBtn.BackgroundColor3 = enemyEspActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(231, 76, 60)
+    if not enemyEspActive then cleanupAllESP() end -- Dọn dẹp khi tắt
+end)
+
+-- Vòng lặp cập nhật ESP (Tối ưu)
+RunService.Heartbeat:Connect(function()
+    -- [TỐI ƯU]: Nếu cả 2 đều tắt, thoát vòng lặp ngay lập tức
+    if not teamEspActive and not enemyEspActive then return end
+
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= Player and p.Character then
+            local character = p.Character
+            local existingHighlight = character:FindFirstChild("AdminESP")
+            
+            local isTeammate = (Player.Team and p.Team == Player.Team)
+            local shouldRender = false
+            local color = Color3.new(1, 1, 1)
+
+            -- Xác định xem có nên render hay không
+            if isTeammate and teamEspActive then
+                shouldRender = true
+                color = Color3.fromRGB(0, 255, 0)
+            elseif not isTeammate and enemyEspActive then
+                shouldRender = true
+                color = Color3.fromRGB(255, 0, 0)
+            end
+
+            -- Áp dụng hoặc xóa bỏ
+            if shouldRender then
+                if not existingHighlight then
+                    local h = Instance.new("Highlight")
+                    h.Name = "AdminESP"
+                    h.FillTransparency = 0.5
+                    h.OutlineTransparency = 0
+                    h.Parent = character
+                end
+                character.AdminESP.FillColor = color
+            else
+                if existingHighlight then
+                    existingHighlight:Destroy()
+                end
+            end
+        end
+    end
+end)
 
 ----------------------------------------------------
 -- LOGIC TROLL BỔ SUNG (NGỒI, NẰM, MÚA, ĐẦU)
