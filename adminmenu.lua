@@ -79,23 +79,32 @@ local CloseCorner = Instance.new("UICorner")
 CloseCorner.CornerRadius = UDim.new(0, 6)
 CloseCorner.Parent = CloseButton
 
--- Thùng chứa cuộn (Đã tăng CanvasSize để chứa các nút Troll mới)
+-- Thùng chứa cuộn (Đã nâng cấp)
 local Container = Instance.new("ScrollingFrame")
 Container.Parent = Frame
 Container.Size = UDim2.new(1, -10, 1, -65)
 Container.Position = UDim2.new(0, 5, 0, 55)
 Container.BackgroundTransparency = 1
-Container.CanvasSize = UDim2.new(0, 0, 0, 2500) 
-Container.ScrollBarThickness = 4
+Container.ScrollBarThickness = 6 -- Tăng nhẹ để dễ kéo hơn
 Container.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
+Container.BorderSizePixel = 0
+
+-- TỰ ĐỘNG CẬP NHẬT KÍCH THƯỚC (Nâng cấp quan trọng nhất)
+Container.AutomaticCanvasSize = Enum.AutomaticSize.Y 
 
 local UIListLayout = Instance.new("UIListLayout")
 UIListLayout.Parent = Container
 UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 8)
+UIListLayout.Padding = UDim.new(0, 10) -- Tăng padding cho thoáng mắt
 
--- HÀM TẠO NÚT
+-- Thêm khoảng cách lề bên trong cho các nút (giúp nút không bị dính sát mép)
+local UIPadding = Instance.new("UIPadding")
+UIPadding.Parent = Container
+UIPadding.PaddingTop = UDim.new(0, 10)
+UIPadding.PaddingBottom = UDim.new(0, 10)
+local TweenService = game:GetService("TweenService")
+
 local function createMenuButton(text, color)
     local btn = Instance.new("TextButton")
     btn.Parent = Container
@@ -112,17 +121,28 @@ local function createMenuButton(text, color)
     corner.Parent = btn
     
     local originalColor = btn.BackgroundColor3
-    local hoverColor = Color3.fromRGB(
-        math.min(originalColor.R * 255 + 20, 255),
-        math.min(originalColor.G * 255 + 20, 255),
-        math.min(originalColor.B * 255 + 20, 255)
+    -- Nâng độ sáng nhẹ cho hover
+    local hoverColor = Color3.new(
+        math.min(originalColor.R + 0.15, 1),
+        math.min(originalColor.G + 0.15, 1),
+        math.min(originalColor.B + 0.15, 1)
     )
     
     btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = hoverColor}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = hoverColor}):Play()
     end)
+    
     btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = originalColor}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = originalColor}):Play()
+    end)
+    
+    -- Thêm hiệu ứng nhấn (Nhấn xuống nút hơi nhỏ lại)
+    btn.MouseButton1Down:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(0, 300, 0, 38)}):Play()
+    end)
+    
+    btn.MouseButton1Up:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(0, 310, 0, 40)}):Play()
     end)
     
     return btn
