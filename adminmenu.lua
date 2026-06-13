@@ -835,6 +835,7 @@ end)
 local mobileFlyGui = nil
 local moveDir = Vector3.new(0, 0, 0) -- Hướng di chuyển
 
+local flySpeed = 60
 FlyButton.MouseButton1Click:Connect(function()
     flying = not flying
     local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
@@ -1145,6 +1146,66 @@ end)
 -- LOGIC TROLL MỚI THÊM VÀO
 ----------------------------------------------------
 
+-- Biến trạng thái
+local ghostModeActive = false
+local ghostModel = nil
+local RunService = game:GetService("RunService")
+
+local GhostModeBtn = createMenuButton("👻 Ghost Mode: TẮT", Color3.fromRGB(155, 89, 182))
+
+-- Hàm tiện ích để tắt/bật va chạm và tàng hình
+local function setGhostEffect(char, isGhosting)
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Transparency = isGhosting and 1 or 0
+            part.CanCollide = not isGhosting -- Tắt va chạm khi làm Ghost
+        elseif part:IsA("Decal") then
+            part.Transparency = isGhosting and 1 or 0
+        end
+    end
+end
+
+GhostModeBtn.MouseButton1Click:Connect(function()
+    ghostModeActive = not ghostModeActive
+    GhostModeBtn.Text = ghostModeActive and "👻 Ghost Mode: BẬT" or "👻 Ghost Mode: TẮT"
+    GhostModeBtn.BackgroundColor3 = ghostModeActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(155, 89, 182)
+
+    local char = Player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+
+    if ghostModeActive then
+        -- 1. Tạo bản sao (Ghost Visual)
+        ghostModel = char:Clone()
+        ghostModel.Name = "GhostVisual"
+        
+        -- Xóa script thừa và chỉnh hiệu ứng "ma"
+        for _, obj in pairs(ghostModel:GetDescendants()) do
+            if obj:IsA("Script") or obj:IsA("LocalScript") then obj:Destroy() end
+            if obj:IsA("BasePart") then
+                obj.Material = Enum.Material.ForceField -- Hiệu ứng lấp lánh như ma
+                obj.Color = Color3.fromRGB(170, 255, 255) -- Màu xanh nhạt
+            end
+        end
+        
+        ghostModel.Parent = workspace
+        
+        -- 2. Làm tàng hình nhân vật thật và tắt va chạm
+        setGhostEffect(char, true)
+    else
+        -- 3. Hủy bỏ Ghost Mode
+        if ghostModel then ghostModel:Destroy() end
+        setGhostEffect(char, false)
+    end
+end)
+
+-- Cập nhật vị trí của Clone
+RunService.Heartbeat:Connect(function()
+    if ghostModeActive and ghostModel and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+        local char = Player.Character
+        -- Giữ clone ở phía trên nhân vật
+        ghostModel:SetPrimaryPartCFrame(char.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+    end
+end)
 
 -- [TROLL 2] Đu Bám Người Khác
 AnnoyBtn.MouseButton1Click:Connect(function()
