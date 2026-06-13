@@ -178,6 +178,7 @@ local antiRagdollActive = false
 local aimbotActive = false
 local camLockActive = false
 local noclip = false
+local myHitboxSmallActive = false
 local flying = false
 local waterWalkActive = false
 local fpsBoostActive = false
@@ -225,6 +226,7 @@ local FPSBoostBtn      = createMenuButton("🚀 Tăng FPS (Tối ưu hóa): TẮ
 local HitboxButton     = createMenuButton("⭕ Phóng To Hitbox Địch: TẮT", Color3.fromRGB(211, 84, 0))
 local TeamEspBtn       = createMenuButton("👥 ESP Đồng đội: TẮT", Color3.fromRGB(46, 204, 113))
 local EnemyEspBtn      = createMenuButton("💀 ESP Địch: TẮT", Color3.fromRGB(231, 76, 60))
+local SmallHitboxBtn   = createMenuButton("🔽 Hitbox Bản Thân Nhỏ: TẮT", Color3.fromRGB(155, 89, 182))
 local SpinBotButton    = createMenuButton("🔄 Spin Bot (Xoay tròn): TẮT", Color3.fromRGB(22, 160, 133)) 
 local AntiRagdollBtn   = createMenuButton("🏋️ Chống Té Ngã: TẮT", Color3.fromRGB(127, 140, 141))
 local AimbotButton     = createMenuButton("🎯 Khóa Mục Tiêu (R-Click): TẮT", Color3.fromRGB(231, 76, 60))
@@ -358,6 +360,35 @@ local function setParticlesEnabled(enabled)
         end
     end
 end
+
+local function setHitboxSize(char, isSmall)
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.Size = isSmall and Vector3.new(0.5, 0.5, 0.5) or Vector3.new(2, 2, 1)
+    end
+end
+
+-- Logic khi nhấn nút
+SmallHitboxBtn.MouseButton1Click:Connect(function()
+    myHitboxSmallActive = not myHitboxSmallActive
+    
+    -- Cập nhật giao diện nút
+    SmallHitboxBtn.Text = myHitboxSmallActive and "🔽 Hitbox Bản Thân Nhỏ: BẬT" or "🔽 Hitbox Bản Thân Nhỏ: TẮT"
+    SmallHitboxBtn.BackgroundColor3 = myHitboxSmallActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(155, 89, 182)
+
+    -- Áp dụng ngay cho nhân vật hiện tại
+    setHitboxSize(Player.Character, myHitboxSmallActive)
+end)
+
+-- Đảm bảo hitbox giữ nguyên khi nhân vật hồi sinh
+Player.CharacterAdded:Connect(function(newChar)
+    if myHitboxSmallActive then
+        -- Chờ một chút để nhân vật load xong hẳn
+        task.wait(0.5) 
+        setHitboxSize(newChar, true)
+    end
+end) 
 
 FPSBoostBtn.MouseButton1Click:Connect(function()
     fpsBoostActive = not fpsBoostActive
