@@ -482,58 +482,55 @@ local function cleanupAllESP()
     end
 end
 
--- Logic nút bấm (cập nhật)
+-- Logic nút bấm
 TeamEspBtn.MouseButton1Click:Connect(function()
     teamEspActive = not teamEspActive
     TeamEspBtn.Text = teamEspActive and "👥 ESP Đồng đội: BẬT" or "👥 ESP Đồng đội: TẮT"
     TeamEspBtn.BackgroundColor3 = teamEspActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(46, 204, 113)
-    if not teamEspActive then cleanupAllESP() end -- Dọn dẹp khi tắt
 end)
 
 EnemyEspBtn.MouseButton1Click:Connect(function()
     enemyEspActive = not enemyEspActive
     EnemyEspBtn.Text = enemyEspActive and "💀 ESP Địch: BẬT" or "💀 ESP Địch: TẮT"
     EnemyEspBtn.BackgroundColor3 = enemyEspActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(231, 76, 60)
-    if not enemyEspActive then cleanupAllESP() end -- Dọn dẹp khi tắt
 end)
 
 -- Vòng lặp cập nhật ESP (Tối ưu)
 RunService.Heartbeat:Connect(function()
-    -- [TỐI ƯU]: Nếu cả 2 đều tắt, thoát vòng lặp ngay lập tức
+    -- Nếu cả 2 đều tắt, thoát ngay để không gây lag
     if not teamEspActive and not enemyEspActive then return end
 
+    local myTeam = Player.Team
+
     for _, p in pairs(Players:GetPlayers()) do
-        if p ~= Player and p.Character then
-            local character = p.Character
-            local existingHighlight = character:FindFirstChild("AdminESP")
-            
-            local isTeammate = (Player.Team and p.Team == Player.Team)
-            local shouldRender = false
-            local color = Color3.new(1, 1, 1)
-
-            -- Xác định xem có nên render hay không
-            if isTeammate and teamEspActive then
-                shouldRender = true
-                color = Color3.fromRGB(0, 255, 0)
-            elseif not isTeammate and enemyEspActive then
-                shouldRender = true
-                color = Color3.fromRGB(255, 0, 0)
+        -- Bỏ qua bản thân
+        if p == Player or not p.Character then continue end
+        
+        local character = p.Character
+        local espObj = character:FindFirstChild("AdminESP")
+        
+        local isTeammate = (myTeam and p.Team == myTeam)
+        local shouldRender = (isTeammate and teamEspActive) or (not isTeammate and enemyEspActive)
+        
+        if shouldRender then
+            -- Nếu cần render mà chưa có ESP, thì tạo mới
+            if not espObj then
+                espObj = Instance.new("Highlight")
+                espObj.Name = "AdminESP"
+                espObj.FillTransparency = 0.5
+                espObj.OutlineTransparency = 0
+                espObj.Parent = character
             end
-
-            -- Áp dụng hoặc xóa bỏ
-            if shouldRender then
-                if not existingHighlight then
-                    local h = Instance.new("Highlight")
-                    h.Name = "AdminESP"
-                    h.FillTransparency = 0.5
-                    h.OutlineTransparency = 0
-                    h.Parent = character
-                end
-                character.AdminESP.FillColor = color
-            else
-                if existingHighlight then
-                    existingHighlight:Destroy()
-                end
+            
+            -- Cập nhật màu sắc (Xanh cho đồng đội, Đỏ cho địch)
+            local targetColor = isTeammate and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+            if espObj.FillColor ~= targetColor then
+                espObj.FillColor = targetColor
+            end
+        else
+            -- Nếu có ESP nhưng không nên hiển thị, xóa nó ngay
+            if espObj then
+                espObj:Destroy()
             end
         end
     end
