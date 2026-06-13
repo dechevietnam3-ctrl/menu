@@ -180,6 +180,7 @@ local camLockActive = false
 local noclip = false
 local flying = false
 local waterWalkActive = false
+local fpsBoostActive = false
 local fovState = 0
 local autoFarmActive = false
 local godMode = false
@@ -220,7 +221,7 @@ local JumpButton       = createMenuButton("🦘 Sức Nhảy: Bình Thường", 
 local DoubleJumpBtn    = createMenuButton("🚀 Nhảy Kép: TẮT", Color3.fromRGB(44, 62, 80)) 
 local InfJumpButton    = createMenuButton("🌌 Nhảy Vô Hạn: TẮT", Color3.fromRGB(52, 73, 94)) 
 local KillAuraButton   = createMenuButton("⚔️ Kill Aura (Bán kính 20): TẮT", Color3.fromRGB(142, 68, 173)) 
-
+local FPSBoostBtn      = createMenuButton("🚀 Tăng FPS (Tối ưu hóa): TẮT", Color3.fromRGB(155, 89, 182))
 local HitboxButton     = createMenuButton("⭕ Phóng To Hitbox Địch: TẮT", Color3.fromRGB(211, 84, 0))
 local TeamEspBtn       = createMenuButton("👥 ESP Đồng đội: TẮT", Color3.fromRGB(46, 204, 113))
 local EnemyEspBtn      = createMenuButton("💀 ESP Địch: TẮT", Color3.fromRGB(231, 76, 60))
@@ -327,6 +328,66 @@ JumpButton.MouseButton1Click:Connect(function()
     else
         if humanoid then humanoid.JumpPower = 50 end
         JumpButton.Text = "🦘 Sức Nhảy: Bình Thường"
+    end
+end)
+
+local Lighting = game:GetService("Lighting")
+local fpsBoostActive = false
+local particleConnection = nil -- Để quản lý sự kiện kết nối
+
+-- Cache cài đặt gốc
+local originalSettings = {
+    GlobalShadows = Lighting.GlobalShadows,
+    FogEnd = Lighting.FogEnd,
+    Brightness = Lighting.Brightness
+}
+
+-- Hàm kiểm tra xem vật thể có phải là hiệu ứng không
+local function isEffect(v)
+    return v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Beam")
+end
+
+-- Hàm xử lý bật/tắt hạt
+local function setParticlesEnabled(enabled)
+    -- Nếu đang bật FPS Boost, chúng ta tắt các hiệu ứng (enabled = false)
+    local state = not enabled 
+    
+    for _, v in pairs(workspace:GetDescendants()) do
+        if isEffect(v) then
+            v.Enabled = state
+        end
+    end
+end
+
+FPSBoostBtn.MouseButton1Click:Connect(function()
+    fpsBoostActive = not fpsBoostActive
+    
+    -- Update UI
+    FPSBoostBtn.Text = fpsBoostActive and "🚀 Tăng FPS: BẬT" or "🚀 Tăng FPS: TẮT"
+    FPSBoostBtn.BackgroundColor3 = fpsBoostActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(155, 89, 182)
+
+    -- 1. Xử lý Lighting
+    Lighting.GlobalShadows = not fpsBoostActive and originalSettings.GlobalShadows or false
+    Lighting.FogEnd = not fpsBoostActive and originalSettings.FogEnd or 999999
+    Lighting.Brightness = not fpsBoostActive and originalSettings.Brightness or 2
+    
+    -- 2. Xử lý Particles thông minh
+    if fpsBoostActive then
+        setParticlesEnabled(true) -- Tắt các hạt hiện có
+        
+        -- Lắng nghe các hạt mới xuất hiện khi FPS Boost đang bật
+        particleConnection = workspace.DescendantAdded:Connect(function(v)
+            if isEffect(v) then
+                v.Enabled = false
+            end
+        end)
+    else
+        -- Bật lại các hạt và ngắt kết nối lắng nghe
+        setParticlesEnabled(false) 
+        if particleConnection then
+            particleConnection:Disconnect()
+            particleConnection = nil
+        end
     end
 end)
 
