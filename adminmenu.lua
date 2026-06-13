@@ -369,26 +369,18 @@ local function setHitboxSize(char, isSmall)
     end
 end
 
--- Logic khi nhấn nút
+-- Logic làm nhỏ hitbox bản thân
 SmallHitboxBtn.MouseButton1Click:Connect(function()
     myHitboxSmallActive = not myHitboxSmallActive
-    
-    -- Cập nhật giao diện nút
     SmallHitboxBtn.Text = myHitboxSmallActive and "🔽 Hitbox Bản Thân Nhỏ: BẬT" or "🔽 Hitbox Bản Thân Nhỏ: TẮT"
     SmallHitboxBtn.BackgroundColor3 = myHitboxSmallActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(155, 89, 182)
 
-    -- Áp dụng ngay cho nhân vật hiện tại
-    setHitboxSize(Player.Character, myHitboxSmallActive)
-end)
-
--- Đảm bảo hitbox giữ nguyên khi nhân vật hồi sinh
-Player.CharacterAdded:Connect(function(newChar)
-    if myHitboxSmallActive then
-        -- Chờ một chút để nhân vật load xong hẳn
-        task.wait(0.5) 
-        setHitboxSize(newChar, true)
+    local char = Player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        -- Kích thước gốc của Roblox thường là 2, 2, 1
+        char.HumanoidRootPart.Size = myHitboxSmallActive and Vector3.new(0.5, 0.5, 0.5) or Vector3.new(2, 2, 1)
     end
-end) 
+end)
 
 FPSBoostBtn.MouseButton1Click:Connect(function()
     fpsBoostActive = not fpsBoostActive
