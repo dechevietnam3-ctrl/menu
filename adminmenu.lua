@@ -411,7 +411,7 @@ FPSBoostBtn.MouseButton1Click:Connect(function()
                 originalParticleStates[v] = v.Enabled
                 v.Enabled = false
             end
-        end)
+        end) 
     else
         if particleConnection then
             particleConnection:Disconnect()
