@@ -831,15 +831,19 @@ SpectateBtn.MouseButton1Click:Connect(function()
     end
 end) 
 
-local flySpeed = 60
-local bodyGyro, bodyVelocity
+-- CẤU HÌNH BIẾN TOÀN CỤC CHO MOBILE
+local mobileFlyGui = nil
+local moveDir = Vector3.new(0, 0, 0) -- Hướng di chuyển
+
 FlyButton.MouseButton1Click:Connect(function()
     flying = not flying
     local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    
     if flying and root then
-        FlyButton.Text = "🕊️ Chế Độ Bay v4: BẬT (E để Boost)"
+        FlyButton.Text = "🕊️ Chế Độ Bay: BẬT"
         FlyButton.BackgroundColor3 = Color3.fromRGB(39, 174, 96)
         
+        -- Khởi tạo BodyGyro & BodyVelocity
         bodyGyro = Instance.new("BodyGyro")
         bodyGyro.P = 9e4
         bodyGyro.maxTorque = Vector3.new(9e5, 9e5, 9e5)
@@ -851,10 +855,38 @@ FlyButton.MouseButton1Click:Connect(function()
         bodyVelocity.maxForce = Vector3.new(9e5, 9e5, 9e5)
         bodyVelocity.Parent = root
         
+        -- TẠO GUI MOBILE NẾU LÀ THIẾT BỊ CẢM ỨNG
+        if UserInputService.TouchEnabled then
+            mobileFlyGui = Instance.new("ScreenGui", Player:WaitForChild("PlayerGui"))
+            local frame = Instance.new("Frame", mobileFlyGui)
+            frame.Size = UDim2.new(0, 150, 0, 150)
+            frame.Position = UDim2.new(0.7, 0, 0.4, 0)
+            frame.BackgroundTransparency = 1
+            
+            local function createBtn(text, pos, dir)
+                local b = Instance.new("TextButton", frame)
+                b.Size = UDim2.new(0, 50, 0, 50)
+                b.Position = pos
+                b.Text = text
+                b.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+                b.MouseButton1Down:Connect(function() moveDir = dir end)
+                b.MouseButton1Up:Connect(function() moveDir = Vector3.new(0,0,0) end)
+                return b
+            end
+            
+            createBtn("▲", UDim2.new(0.35, 0, 0, 0), Vector3.new(0, 1, 0))    -- Lên
+            createBtn("◀", UDim2.new(0, 0, 0.35, 0), Vector3.new(0, 0, -1))  -- Forward (Theo Camera)
+            createBtn("▶", UDim2.new(0.7, 0, 0.35, 0), Vector3.new(0, 0, 1)) -- Back
+            createBtn("▼", UDim2.new(0.35, 0, 0.7, 0), Vector3.new(0, -1, 0))-- Xuống
+        end
+        
+        -- LOOP BAY
         task.spawn(function()
             while flying and root and root.Parent do
                 RunService.RenderStepped:Wait()
+                
                 local direction = Vector3.new(0, 0, 0)
+                -- Hỗ trợ cả PC (Phím) và Mobile (Nút ảo)
                 if UserInputService:IsKeyDown(Enum.KeyCode.W) then direction = direction + Camera.CFrame.LookVector end
                 if UserInputService:IsKeyDown(Enum.KeyCode.S) then direction = direction - Camera.CFrame.LookVector end
                 if UserInputService:IsKeyDown(Enum.KeyCode.A) then direction = direction - Camera.CFrame.RightVector end
@@ -862,18 +894,23 @@ FlyButton.MouseButton1Click:Connect(function()
                 if UserInputService:IsKeyDown(Enum.KeyCode.Space) then direction = direction + Vector3.new(0, 1, 0) end
                 if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then direction = direction - Vector3.new(0, 1, 0) end
                 
-                local currentSpeed = UserInputService:IsKeyDown(Enum.KeyCode.E) and (flySpeed * 3) or flySpeed
+                -- Cộng thêm hướng từ Mobile Buttons
+                if moveDir.Y ~= 0 then direction = direction + Vector3.new(0, moveDir.Y, 0) end
+                if moveDir.Z ~= 0 then direction = direction + (moveDir.Z * Camera.CFrame.LookVector) end
+                
                 bodyGyro.cframe = Camera.CFrame
-                bodyVelocity.velocity = direction.Magnitude > 0 and direction.Unit * currentSpeed or Vector3.new(0, 0, 0)
+                bodyVelocity.velocity = direction.Magnitude > 0 and (direction.Unit * (flySpeed * 2)) or Vector3.new(0, 0, 0)
             end
         end)
+        
     else
-        FlyButton.Text = "🕊️ Chế Độ Bay v4: TẮT"
+        FlyButton.Text = "🕊️ Chế Độ Bay: TẮT"
         FlyButton.BackgroundColor3 = Color3.fromRGB(52, 152, 219)
         if bodyGyro then bodyGyro:Destroy() end
         if bodyVelocity then bodyVelocity:Destroy() end
+        if mobileFlyGui then mobileFlyGui:Destroy() end
     end
-end) 
+end)
 
 -- Logic ESP NPC
 NpcEspBtn.MouseButton1Click:Connect(function()
