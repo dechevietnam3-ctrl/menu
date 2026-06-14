@@ -190,7 +190,13 @@ local function createMenuButton(text, color)
     return btn
 end 
 
--- XÓA HOẶC BÌNH LUẬN (COMMENT) ĐOẠN CODE HUD CŨ TRƯỚC KHI DÁN CÁI NÀY VÀO
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Stats = game:GetService("Stats")
+local UserInputService = game:GetService("UserInputService")
+local Player = Players.LocalPlayer
+
+-- 1. Tạo GUI
 local HUD_Gui = Instance.new("ScreenGui")
 HUD_Gui.Name = "StatsHUD"
 HUD_Gui.ResetOnSpawn = false
@@ -198,56 +204,109 @@ HUD_Gui.Parent = Player:WaitForChild("PlayerGui")
 
 local HUD_Frame = Instance.new("Frame")
 HUD_Frame.Parent = HUD_Gui
-HUD_Frame.Size = UDim2.new(0, 220, 0, 160) -- Tăng kích thước lên 160 để chứa đủ chữ
-HUD_Frame.Position = UDim2.new(1, -230, 0, 10) 
-HUD_Frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-HUD_Frame.BackgroundTransparency = 0.5
+HUD_Frame.Size = UDim2.new(0, 230, 0, 180)
+HUD_Frame.Position = UDim2.new(1, -240, 0, 10)
+HUD_Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+HUD_Frame.BackgroundTransparency = 0.3
 HUD_Frame.BorderSizePixel = 0
 Instance.new("UICorner", HUD_Frame).CornerRadius = UDim.new(0, 8)
 
+-- Nút ẩn/hiện
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Parent = HUD_Frame
+ToggleBtn.Size = UDim2.new(0, 30, 0, 30)
+ToggleBtn.Position = UDim2.new(1, -35, 0, 5)
+ToggleBtn.Text = "-"
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+ToggleBtn.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 4)
+
 local HUD_Text = Instance.new("TextLabel")
 HUD_Text.Parent = HUD_Frame
-HUD_Text.Size = UDim2.new(1, -10, 1, -10)
-HUD_Text.Position = UDim2.new(0, 5, 0, 5)
+HUD_Text.Size = UDim2.new(1, -20, 1, -30)
+HUD_Text.Position = UDim2.new(0, 10, 0, 35)
 HUD_Text.BackgroundTransparency = 1
-HUD_Text.TextColor3 = Color3.new(1, 1, 1)
-HUD_Text.Font = Enum.Font.Code -- Font code dễ nhìn hơn cho số liệu
-HUD_Text.TextSize = 13
+HUD_Text.TextColor3 = Color3.fromRGB(255, 255, 255)
+HUD_Text.Font = Enum.Font.Code
+HUD_Text.TextSize = 14
 HUD_Text.TextXAlignment = Enum.TextXAlignment.Left
 HUD_Text.TextYAlignment = Enum.TextYAlignment.Top
 HUD_Text.TextWrapped = true
 
--- Logic cập nhật
-local startTime = os.time()
-
-RunService.RenderStepped:Connect(function(deltaTime)
-    if not HUD_Text or not HUD_Text.Parent then return end
-    
-    -- Tính toán
-    local elapsed = os.time() - startTime
-    local timeStr = string.format("%02d:%02d:%02d", math.floor(elapsed/3600), math.floor((elapsed%3600)/60), elapsed%60)
-    
-    local npcCount = 0
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and not Players:GetPlayerFromCharacter(obj) then
-            npcCount = npcCount + 1
-        end
+-- 2. Logic Di chuyển (Draggable)
+local dragging, dragInput, dragStart, startPos
+HUD_Frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = HUD_Frame.Position
     end
-    
-    local char = Player.Character
-    local hum = char and char:FindFirstChild("Humanoid")
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    
-    local speed = hum and math.floor(hum.WalkSpeed) or 0
-    local jump = hum and math.floor(hum.JumpPower) or 0
-    local health = hum and math.floor(hum.Health) or 0
-    local pos = root and root.Position or Vector3.new(0,0,0)
-    
-    -- Cập nhật text
-    HUD_Text.Text = string.format(
-        "⏱️ Time: %s\n👥 Players: %d | NPC: %d\n⚡ Speed: %d | Jump: %d\n❤️ HP: %d\n📍 Pos: %.0f, %.0f, %.0f\n📶 FPS: %d | Ping: %dms", 
-        timeStr, #Players:GetPlayers(), npcCount, speed, jump, health, pos.X, pos.Y, pos.Z, math.floor(1/deltaTime), math.floor(Player:GetNetworkPing()*1000)
-    )
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+        local delta = input.Position - dragStart
+        HUD_Frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+end)
+
+-- 3. Logic Nút ẩn/hiện
+local isMinimized = false
+ToggleBtn.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    HUD_Frame.Size = isMinimized and UDim2.new(0, 230, 0, 40) or UDim2.new(0, 230, 0, 180)
+    HUD_Text.Visible = not isMinimized
+    ToggleBtn.Text = isMinimized and "+" or "-"
+end)
+
+-- 4. Logic cập nhật
+local startTime = os.time()
+local fps = 0
+local frameCount = 0
+
+-- Tính FPS bằng cách đếm khung hình trong 1 giây
+RunService.RenderStepped:Connect(function()
+    frameCount += 1
+end)
+
+task.spawn(function()
+    while task.wait(0.5) do
+        -- Lấy FPS trung bình
+        fps = frameCount * 2
+        frameCount = 0
+
+        if not HUD_Frame or not HUD_Frame.Parent then break end
+        
+        -- Logic đếm NPC (CẢNH BÁO: GetDescendants tốn tài nguyên, nếu game lớn hãy dùng CollectionService)
+        local npcCount = 0
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and not Players:GetPlayerFromCharacter(obj) then
+                npcCount += 1
+            end
+        end
+        
+        local char = Player.Character
+        local hum = char and char:FindFirstChild("Humanoid")
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        
+        local speed = hum and math.floor(hum.WalkSpeed) or 0
+        local health = hum and math.floor(hum.Health) or 0
+        local pos = root and root.Position or Vector3.new(0,0,0)
+        
+        local elapsed = os.time() - startTime
+        local timeStr = string.format("%02d:%02d:%02d", math.floor(elapsed/3600), math.floor((elapsed%3600)/60), elapsed%60)
+        local ping = math.floor(Player:GetNetworkPing() * 1000)
+        local mem = math.floor(Stats:GetTotalMemoryUsageMb())
+        
+        HUD_Text.Text = string.format(
+            "⏱️ Time: %s\n👥 Players: %d | NPC: %d\n⚡ Speed: %d\n❤️ HP: %d\n📍 Pos: %.0f, %.0f, %.0f\n📶 FPS: %d | Ping: %dms\n💾 Mem: %d MB", 
+            timeStr, #Players:GetPlayers(), npcCount, speed, health, pos.X, pos.Y, pos.Z, fps, ping, mem
+        )
+    end
 end)
 
 -- Ví dụ tạo thử 1 nút test menu
