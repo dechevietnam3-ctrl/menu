@@ -254,7 +254,6 @@ local HitboxButton     = createMenuButton("⭕ Phóng To Hitbox Địch: TẮT",
 local TeamEspBtn       = createMenuButton("👥 ESP Đồng đội: TẮT", Color3.fromRGB(46, 204, 113))
 local EnemyEspBtn      = createMenuButton("💀 ESP Địch: TẮT", Color3.fromRGB(231, 76, 60))
 local SpinBotButton    = createMenuButton("🔄 Spin Bot (Xoay tròn): TẮT", Color3.fromRGB(22, 160, 133)) 
-local MapButton        = createMenuButton("🗺️ Mini Map: TẮT", Color3.fromRGB(142, 68, 173))
 local AntiRagdollBtn   = createMenuButton("🏋️ Chống Té Ngã: TẮT", Color3.fromRGB(127, 140, 141))
 local AimbotButton     = createMenuButton("🎯 Khóa Mục Tiêu (R-Click): TẮT", Color3.fromRGB(231, 76, 60))
 local CamLockBtn       = createMenuButton("🔒 Cam Lock (Khóa cứng Camera): TẮT", Color3.fromRGB(192, 57, 43))
