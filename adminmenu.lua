@@ -1136,6 +1136,31 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- CẤU HÌNH NCLIP MỚI
+local RunService = game:GetService("RunService")
+local Player = game.Players.LocalPlayer
+local noclip = false
+
+NoclipButton.MouseButton1Click:Connect(function()
+    noclip = not noclip
+    NoclipButton.Text = noclip and "👻 Đi Xuyên Tường: BẬT" or "👻 Đi Xuyên Tường: TẮT"
+    NoclipButton.BackgroundColor3 = noclip and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(155, 89, 182)
+end)
+
+-- Sử dụng Stepped để đảm bảo va chạm luôn được tắt trong mọi khung hình
+RunService.Stepped:Connect(function()
+    if noclip then
+        local character = Player.Character
+        if character then
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") and part.CanCollide then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end
+end)
+
 ----------------------------------------------------
 -- LOGIC TROLL MỚI THÊM VÀO
 ----------------------------------------------------
