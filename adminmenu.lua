@@ -236,8 +236,9 @@ local layActive = false
 local loopDanceActive = false
 local invisibleHeadActive = false
 local currentDance = nil
-
-
+local ModifyPartBtn = false
+local CreatePartBtn = false
+local PrintTreeBtn  = false
 -- Trạng thái Troll mới
 local annoyActive = false
 local spamChatActive = false
@@ -269,7 +270,10 @@ local XrayButton       = createMenuButton("🧱 X-Ray (Nhìn Xuyên Tường): T
 local NpcEspBtn        = createMenuButton("👁️ ESP NPC: TẮT", Color3.fromRGB(241, 196, 15))
 local NpcHitboxBtn     = createMenuButton("⭕ Hitbox NPC: TẮT", Color3.fromRGB(211, 84, 0))
 local SpectateBtn      = createMenuButton("🔭 Xem Người Chơi (Spectate): TẮT", Color3.fromRGB(52, 152, 219))
-local LayBtn          = createMenuButton("🛌 Buộc Nằm (Lay Down): TẮT", Color3.fromRGB(230, 126, 34))
+local LayBtn           = createMenuButton("🛌 Buộc Nằm (Lay Down): TẮT", Color3.fromRGB(230, 126, 34)) 
+local ModifyPartBtn    = createMenuButton("✏️ Chỉnh Sửa Vật Thể (Click)", Color3.fromRGB(155, 89, 182))
+local CreatePartBtn    = createMenuButton("➕ Tạo Part Mới", Color3.fromRGB(39, 174, 96))
+local PrintTreeBtn     = createMenuButton("📜 In Cấu Trúc (Console F9)", Color3.fromRGB(52, 73, 94))
 local LoopDanceBtn    = createMenuButton("💃 Nhảy Múa Liên Tục: TẮT", Color3.fromRGB(46, 204, 113))
 
 -- BỔ SUNG CÁC NÚT TROLL
@@ -496,6 +500,68 @@ end)
 -- LOGIC TROLL BỔ SUNG (NGỒI, NẰM, MÚA, ĐẦU)
 ----------------------------------------------------
 
+-- Services
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+
+-- Trạng thái
+local isModifyMode = false
+
+-- Chức năng: Đệ quy in cấu trúc (Dùng để liệt kê tất cả con cháu)
+local function printTreeRecursive(parent, indent)
+    indent = indent or ""
+    for _, child in pairs(parent:GetChildren()) do
+        if child:IsA("Model") or child:IsA("Folder") or child:IsA("Part") then
+            print(indent .. "-> " .. child.Name .. " [" .. child.ClassName .. "]")
+            printTreeRecursive(child, indent .. "  ") -- Gọi đệ quy
+        end
+    end
+end
+
+-- --- XỬ LÝ SỰ KIỆN ---
+
+ModifyPartBtn.MouseButton1Click:Connect(function()
+    isModifyMode = not isModifyMode
+    ModifyPartBtn.Text = isModifyMode and "✏️ Đang Chọn Vật Thể..." or "✏️ Chỉnh Sửa Vật Thể (Click chuột)"
+    ModifyPartBtn.BackgroundColor3 = isModifyMode and Color3.fromRGB(231, 76, 60) or Color3.fromRGB(155, 89, 182)
+end)
+
+mouse.Button1Down:Connect(function()
+    if isModifyMode and mouse.Target then
+        local target = mouse.Target
+        -- Kiểm tra xem target có phải là một Part hợp lệ không
+        if target:IsA("BasePart") then
+            target.Color = Color3.fromRGB(math.random(0, 255), math.random(0, 255), math.random(0, 255))
+            target.Transparency = 0.5
+            target.CanCollide = not target.CanCollide -- Toggle thay vì tắt hẳn
+        end
+    end
+end)
+
+CreatePartBtn.MouseButton1Click:Connect(function()
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        -- Tối ưu: Tạo part và set thuộc tính trước khi gán Parent
+        local newPart = Instance.new("Part")
+        newPart.Name = "StudioPart"
+        newPart.Size = Vector3.new(4, 4, 4)
+        newPart.Position = char.HumanoidRootPart.Position + (char.HumanoidRootPart.CFrame.LookVector * 5) -- Tạo phía trước mặt
+        newPart.BrickColor = BrickColor.Random()
+        newPart.Parent = Workspace
+    end
+end)
+
+PrintTreeBtn.MouseButton1Click:Connect(function()
+    print("--- CẤU TRÚC WORKSPACE (CHI TIẾT) ---")
+    printTreeRecursive(Workspace)
+    
+    PrintTreeBtn.Text = "✅ Đã in ra Console"
+    task.wait(2)
+    PrintTreeBtn.Text = "📜 In Cấu Trúc (Console F9)"
+end)
 
 RunService.Heartbeat:Connect(function()
     if sitActive and Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
