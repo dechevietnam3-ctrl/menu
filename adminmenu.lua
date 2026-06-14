@@ -534,19 +534,39 @@ LoopDanceBtn.MouseButton1Click:Connect(function()
         if currentDance then currentDance:Stop() end
     end
 end)
+-- HÀM CẬP NHẬT HITBOX (Đã tối ưu)
+local function updateHitboxes()
+    -- Chỉ chạy vòng lặp khi tính năng đang được BẬT
+    if not hitboxActive then return end 
+    
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= Player and p.Character then
+            local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+            -- Chỉ set thuộc tính khi chưa được phóng to để tránh spam thay đổi thuộc tính vật lý liên tục
+            if hrp and hrp.Size.X ~= 12 then 
+                hrp.Size = Vector3.new(12, 12, 12)
+                hrp.Transparency = 0.75
+                hrp.Color = Color3.fromRGB(255, 0, 0)
+                hrp.CanCollide = false 
+            end
+        end
+    end
+end
+-------------------------
+-- Vòng lặp Heartbeat (Chạy nhẹ hơn)
+RunService.Heartbeat:Connect(updateHitboxes)
 
 -- XỬ LÝ NÚT BẤM
 HitboxButton.MouseButton1Click:Connect(function()
     hitboxActive = not hitboxActive
     
-    -- Cập nhật giao diện nút
     HitboxButton.Text = hitboxActive and "⭕ Phóng To Hitbox Địch: BẬT" or "⭕ Phóng To Hitbox Địch: TẮT"
     HitboxButton.BackgroundColor3 = hitboxActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(211, 84, 0)
     
-    -- Nếu TẮT thì reset lại tất cả
+    -- Reset ngay lập tức khi tắt
     if not hitboxActive then
         for _, p in pairs(Players:GetPlayers()) do
-            if p ~= Player and p.Character then
+            if p.Character then
                 local hrp = p.Character:FindFirstChild("HumanoidRootPart")
                 if hrp then
                     hrp.Size = Vector3.new(2, 2, 1)
@@ -556,15 +576,9 @@ HitboxButton.MouseButton1Click:Connect(function()
                 end
             end
         end
-    else
-        -- Nếu BẬT thì chạy quét ngay lập tức
-        updateHitboxes()
     end
 end)
-
--- Tối ưu: Dùng Heartbeat thay vì RenderStepped (nhẹ hơn)
-RunService.Heartbeat:Connect(updateHitboxes)
-
+---------------------
 SpinBotButton.MouseButton1Click:Connect(function()
     spinBotActive = not spinBotActive
     SpinBotButton.Text = spinBotActive and "🔄 Spin Bot: BẬT" or "🔄 Spin Bot (Xoay tròn): TẮT"
@@ -986,36 +1000,38 @@ end)
 Players.PlayerAdded:Connect(function(p) p.CharacterAdded:Connect(function() task.wait(0.5); if espActive then applyESP(p) end end) end)
 for _, p in pairs(Players:GetPlayers()) do p.CharacterAdded:Connect(function() task.wait(0.5); if espActive then applyESP(p) end end) end
 Players.PlayerRemoving:Connect(function(p) removeESP(p) end)
+---------------------------------------------------------------------------------------------
+-- Lưu trữ giá trị gốc để khôi phục khi tắt
+local originalAmbient = Lighting.Ambient
+local originalOutdoorAmbient = Lighting.OutdoorAmbient
+local originalBrightness = Lighting.Brightness
+local originalClockTime = Lighting.ClockTime
 
-InfOxygenBtn.MouseButton1Click:Connect(function()
-    infiniteOxygenActive = not infiniteOxygenActive
-    InfOxygenBtn.Text = infiniteOxygenActive and "🤿 Vô Hạn Ô-xy: BẬT" or "🤿 Vô Hạn Ô-xy (Dưới nước): TẮT"
-    InfOxygenBtn.BackgroundColor3 = infiniteOxygenActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(34, 166, 179)
-end)
-
-RunService.Heartbeat:Connect(function()
-    if infiniteOxygenActive and Player.Character then
-        local data = Player.Character:FindFirstChild("Oxygen") or Player.Character:FindFirstChild("Air")
-        if data and data:IsA("ValueBase") then data.Value = 100 end
-    end
-end)
-
-originalAmbient = Lighting.Ambient
-originalOutdoorAmbient = Lighting.OutdoorAmbient
 FullBrightBtn.MouseButton1Click:Connect(function()
     fullBrightActive = not fullBrightActive
+    
     FullBrightBtn.Text = fullBrightActive and "💡 FullBright: BẬT" or "💡 FullBright (Sáng Đêm): TẮT"
     FullBrightBtn.BackgroundColor3 = fullBrightActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(241, 196, 15)
+    
+    -- Khôi phục giá trị gốc khi tắt
     if not fullBrightActive then
         Lighting.Ambient = originalAmbient
         Lighting.OutdoorAmbient = originalOutdoorAmbient
+        Lighting.Brightness = originalBrightness
+        Lighting.ClockTime = originalClockTime
     end
 end)
 
+-- Vòng lặp cập nhật liên tục để đảm bảo độ sáng không bị thay đổi bởi server
 RunService.RenderStepped:Connect(function()
     if fullBrightActive then
         Lighting.Ambient = Color3.fromRGB(255, 255, 255)
         Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+        Lighting.Brightness = 2 -- Tăng độ sáng lên
+        Lighting.ClockTime = 12 -- Cố định thời gian là buổi trưa
+        
+        -- Thêm một lớp phủ Fog (sương mù) để loại bỏ tối nếu map có sương mù
+        Lighting.FogEnd = 100000 
     end
 end)
 
