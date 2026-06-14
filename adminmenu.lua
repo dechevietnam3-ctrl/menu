@@ -293,6 +293,7 @@ task.spawn(function()
         local root = char and char:FindFirstChild("HumanoidRootPart")
         
         local speed = hum and math.floor(hum.WalkSpeed) or 0
+        local jump = hum and (hum.UseJumpPower and math.floor(hum.JumpPower) or math.floor(hum.JumpHeight)) or 0
         local health = hum and math.floor(hum.Health) or 0
         local pos = root and root.Position or Vector3.new(0,0,0)
         
@@ -301,11 +302,12 @@ task.spawn(function()
         local ping = math.floor(Player:GetNetworkPing() * 1000)
         local mem = math.floor(Stats:GetTotalMemoryUsageMb())
         
-        HUD_Text.Text = string.format(
-            "⏱️ Time: %s\n👥 Players: %d | NPC: %d\n⚡ Speed: %d\n❤️ HP: %d\n📍 Pos: %.0f, %.0f, %.0f\n📶 FPS: %d | Ping: %dms\n💾 Mem: %d MB", 
-            timeStr, #Players:GetPlayers(), npcCount, speed, health, pos.X, pos.Y, pos.Z, fps, ping, mem
-        )
-    end
+       
+		HUD_Text.Text = string.format(
+			"⏱️ Time: %s\n👥 Players: %d | NPC: %d\n⚡ Speed: %d | ⬆️ Jump: %d\n❤️ HP: %d\n📍 Pos: %.0f, %.0f, %.0f\n📶 FPS: %d | Ping: %dms\n💾 Mem: %d MB", 
+			timeStr, #Players:GetPlayers(), npcCount, speed, jump, health, pos.X, pos.Y, pos.Z, fps, ping, mem
+		)
+	end
 end)
 -- Ví dụ tạo thử 1 nút test menu
 createMenuButton("Test Tính Năng 1", Color3.fromRGB(0, 150, 255))
