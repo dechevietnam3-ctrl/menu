@@ -3,6 +3,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
+local Stats = game:GetService("Stats") -- CẦN THIẾT ĐỂ LẤY MEMORY
 
 local Player = Players.LocalPlayer
 local Mouse = Player:GetMouse()
@@ -189,13 +190,6 @@ local function createMenuButton(text, color)
     
     return btn
 end
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local Stats = game:GetService("Stats") -- CẦN THIẾT ĐỂ LẤY MEMORY
-
-local Player = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
 
 -- SETUP UI
 local HUD_Gui = Instance.new("ScreenGui")
