@@ -189,7 +189,6 @@ local function createMenuButton(text, color)
     
     return btn
 end 
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Stats = game:GetService("Stats")
@@ -308,7 +307,6 @@ task.spawn(function()
         )
     end
 end)
-
 -- Ví dụ tạo thử 1 nút test menu
 createMenuButton("Test Tính Năng 1", Color3.fromRGB(0, 150, 255))
 
