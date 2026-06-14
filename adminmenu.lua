@@ -335,7 +335,67 @@ SpeedButton.MouseButton1Click:Connect(function()
     end
 end)
 -------------------------------
+-- CẤU HÌNH ESP
+local espActive = false
+local ESPContainer = Instance.new("Folder", workspace)
+ESPContainer.Name = "ESP_Container"
 
+local function createTag(obj)
+    if obj:FindFirstChild("ESP_Tag") then return end
+    
+    local billboard = Instance.new("BillboardGui", obj)
+    billboard.Name = "ESP_Tag"
+    billboard.AlwaysOnTop = true
+    billboard.Size = UDim2.new(0, 100, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 2, 0)
+    
+    local label = Instance.new("TextLabel", billboard)
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = obj.Name
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.Font = Enum.Font.SourceSansBold
+    label.TextSize = 14
+    label.TextStrokeTransparency = 0 -- Tạo viền chữ cho dễ nhìn
+end
+
+local function clearESP()
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:FindFirstChild("ESP_Tag") then
+            obj.ESP_Tag:Destroy()
+        end
+    end
+end
+
+-- XỬ LÝ NÚT BẤM ESP
+ESPButton.MouseButton1Click:Connect(function()
+    espActive = not espActive
+    ESPButton.Text = espActive and "🏷️ ESP Tên: BẬT" or "🏷️ ESP Tên: TẮT"
+    ESPButton.BackgroundColor3 = espActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(192, 57, 43)
+    
+    if not espActive then clearESP() end
+end)
+
+-- VÒNG LẶP CẬP NHẬT (Chỉ quét Model và Parts quan trọng)
+RunService.Heartbeat:Connect(function()
+    if not espActive then return end
+    
+    -- Chỉ quét những vật thể trong tầm nhìn (ví dụ bán kính 100 studs)
+    local playerPos = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character.HumanoidRootPart.Position or Vector3.new(0,0,0)
+    
+    for _, obj in pairs(workspace:GetChildren()) do
+        -- Lọc: Chỉ lấy Model hoặc Part, bỏ qua các vật thể nhỏ/rác
+        if (obj:IsA("Model") or obj:IsA("Part")) and obj ~= Player.Character then
+            local pos = (obj:IsA("Model") and obj:GetPrimaryPartCFrame().Position) or obj.Position
+            if (pos - playerPos).Magnitude < 100 then -- Giới hạn 100 studs
+                createTag(obj)
+            else
+                -- Xóa tag nếu ở xa
+                if obj:FindFirstChild("ESP_Tag") then obj.ESP_Tag:Destroy() end
+            end
+        end
+    end
+end)
 ------------------
 JumpButton.MouseButton1Click:Connect(function()
     jumpState = not jumpState
