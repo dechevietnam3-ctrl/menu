@@ -190,43 +190,42 @@ local function createMenuButton(text, color)
     return btn
 end
 
--- 1. Tạo thanh chứa thông tin (Status Bar)
+-- Tạo thanh chứa thông tin (Status Bar)
 local StatusFrame = Instance.new("Frame")
+StatusFrame.Name = "StatusFrame" -- Đặt tên để dễ tìm
 StatusFrame.Parent = Frame
 StatusFrame.Size = UDim2.new(1, 0, 0, 30)
-StatusFrame.Position = UDim2.new(0, 0, 1, -30) -- Đặt ở cuối khung (đáy)
+StatusFrame.Position = UDim2.new(0, 0, 1, -30) 
 StatusFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 StatusFrame.BorderSizePixel = 0
-
-local StatusCorner = Instance.new("UICorner")
-StatusCorner.CornerRadius = UDim.new(0, 8)
-StatusCorner.Parent = StatusFrame
+StatusFrame.ZIndex = 99 -- Đẩy lên trên cùng
 
 local StatusText = Instance.new("TextLabel")
 StatusText.Parent = StatusFrame
 StatusText.Size = UDim2.new(1, -10, 1, 0)
 StatusText.Position = UDim2.new(0, 5, 0, 0)
 StatusText.BackgroundTransparency = 1
-StatusText.TextColor3 = Color3.new(1, 1, 1)
+StatusText.TextColor3 = Color3.fromRGB(255, 255, 255) -- Chỉnh trắng rõ ràng
 StatusText.Font = Enum.Font.Code
 StatusText.TextSize = 12
 StatusText.TextXAlignment = Enum.TextXAlignment.Left
+StatusText.ZIndex = 100 -- Đẩy chữ lên trên cùng
 
--- 2. Hàm cập nhật thông số mỗi frame
+print("Đã tạo Status Bar thành công!") -- Kiểm tra xem code có chạy tới đây không
+
+-- Hàm cập nhật
 RunService.RenderStepped:Connect(function(deltaTime)
-    if not Frame.Visible then return end -- Chỉ cập nhật khi menu đang mở để tiết kiệm tài nguyên
+    if not Frame.Visible then return end
     
     local fps = math.floor(1 / deltaTime)
     local ping = math.floor(Player:GetNetworkPing() * 1000)
     local playerCount = #Players:GetPlayers()
     
-    -- Lấy vị trí nhân vật (X, Y, Z)
     local pos = Vector3.new(0,0,0)
     if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
         pos = Player.Character.HumanoidRootPart.Position
     end
     
-    -- Hiển thị văn bản
     StatusText.Text = string.format("FPS: %d | Ping: %dms | P: %d | Pos: %.0f, %.0f, %.0f", 
         fps, ping, playerCount, pos.X, pos.Y, pos.Z)
 end)
