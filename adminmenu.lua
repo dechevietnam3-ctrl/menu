@@ -746,23 +746,6 @@ task.spawn(function()
     end
 end)
 
-
-
--- 6. Ghost Mode (Mờ người)
-GhostModeBtn.MouseButton1Click:Connect(function()
-    ghostModeActive = not ghostModeActive
-    GhostModeBtn.Text = ghostModeActive and "👻 Ghost Mode: BẬT" or "👻 Ghost Mode: TẮT"
-    GhostModeBtn.BackgroundColor3 = ghostModeActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(189, 195, 199)
-    
-    if Player.Character then
-        for _, part in pairs(Player.Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.Transparency = ghostModeActive and 0.6 or 0
-            end
-        end
-    end
-end) 
-
 TriggerBotBtn.MouseButton1Click:Connect(function()
     triggerBotActive = not triggerBotActive
     TriggerBotBtn.Text = triggerBotActive and "🤖 Trigger Bot: BẬT" or "🤖 Trigger Bot: TẮT"
@@ -831,17 +814,43 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
+local RunService = game:GetService("RunService")
+local Player = game.Players.LocalPlayer
+local noclip = false
+
+-- Lưu trữ các bộ phận để khôi phục trạng thái va chạm
+local function setCollisions(enabled)
+    local character = Player.Character
+    if not character then return end
+    
+    for _, part in pairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = not enabled
+        end
+    end
+end
+
 NoclipButton.MouseButton1Click:Connect(function()
     noclip = not noclip
+    
+    -- Cập nhật giao diện
     NoclipButton.Text = noclip and "👻 Đi Xuyên Tường: BẬT" or "👻 Đi Xuyên Tường: TẮT"
     NoclipButton.BackgroundColor3 = noclip and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(155, 89, 182)
+    
+    -- Nếu tắt noclip, khôi phục lại CanCollide
+    if not noclip then
+        setCollisions(false)
+    end
 end)
 
 RunService.Stepped:Connect(function()
-    if noclip and Player.Character then
-        for _, part in pairs(Player.Character:GetDescendants()) do
-            if part:IsA("BasePart") and part.CanCollide then
-                part.CanCollide = false
+    if noclip then
+        local character = Player.Character
+        if character then
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") and part.CanCollide then
+                    part.CanCollide = false
+                end
             end
         end
     end
