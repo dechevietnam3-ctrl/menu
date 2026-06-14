@@ -190,33 +190,38 @@ local function createMenuButton(text, color)
     return btn
 end
 
--- Tạo thanh chứa thông tin (Status Bar)
-local StatusFrame = Instance.new("Frame")
-StatusFrame.Name = "StatusFrame" -- Đặt tên để dễ tìm
-StatusFrame.Parent = Frame
-StatusFrame.Size = UDim2.new(1, 0, 0, 30)
-StatusFrame.Position = UDim2.new(0, 0, 1, -30) 
-StatusFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-StatusFrame.BorderSizePixel = 0
-StatusFrame.ZIndex = 99 -- Đẩy lên trên cùng
+-- Tạo HUD hiển thị ở góc (Góc phải trên)
+local HUD_Gui = Instance.new("ScreenGui")
+HUD_Gui.Name = "StatsHUD"
+HUD_Gui.ResetOnSpawn = false
+HUD_Gui.Parent = Player:WaitForChild("PlayerGui")
 
-local StatusText = Instance.new("TextLabel")
-StatusText.Parent = StatusFrame
-StatusText.Size = UDim2.new(1, -10, 1, 0)
-StatusText.Position = UDim2.new(0, 5, 0, 0)
-StatusText.BackgroundTransparency = 1
-StatusText.TextColor3 = Color3.fromRGB(255, 255, 255) -- Chỉnh trắng rõ ràng
-StatusText.Font = Enum.Font.Code
-StatusText.TextSize = 12
-StatusText.TextXAlignment = Enum.TextXAlignment.Left
-StatusText.ZIndex = 100 -- Đẩy chữ lên trên cùng
+local HUD_Frame = Instance.new("Frame")
+HUD_Frame.Parent = HUD_Gui
+HUD_Frame.Size = UDim2.new(0, 180, 0, 80)
+HUD_Frame.Position = UDim2.new(1, -190, 0, 10) -- Vị trí góc phải trên
+HUD_Frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+HUD_Frame.BackgroundTransparency = 0.5
+HUD_Frame.BorderSizePixel = 0
 
-print("Đã tạo Status Bar thành công!") -- Kiểm tra xem code có chạy tới đây không
+local HUD_Corner = Instance.new("UICorner")
+HUD_Corner.CornerRadius = UDim.new(0, 8)
+HUD_Corner.Parent = HUD_Frame
 
--- Hàm cập nhật
+local HUD_Text = Instance.new("TextLabel")
+HUD_Text.Parent = HUD_Frame
+HUD_Text.Size = UDim2.new(1, -10, 1, 0)
+HUD_Text.Position = UDim2.new(0, 5, 0, 0)
+HUD_Text.BackgroundTransparency = 1
+HUD_Text.TextColor3 = Color3.new(1, 1, 1)
+HUD_Text.Font = Enum.Font.GothamBold
+HUD_Text.TextSize = 12
+HUD_Text.TextXAlignment = Enum.TextXAlignment.Left
+HUD_Text.TextYAlignment = Enum.TextYAlignment.Top
+HUD_Text.TextWrapped = true
+
+-- Hàm cập nhật thông số (Dùng chung cho cả Menu và HUD nếu bạn muốn)
 RunService.RenderStepped:Connect(function(deltaTime)
-    if not Frame.Visible then return end
-    
     local fps = math.floor(1 / deltaTime)
     local ping = math.floor(Player:GetNetworkPing() * 1000)
     local playerCount = #Players:GetPlayers()
@@ -226,10 +231,9 @@ RunService.RenderStepped:Connect(function(deltaTime)
         pos = Player.Character.HumanoidRootPart.Position
     end
     
-    StatusText.Text = string.format("FPS: %d | Ping: %dms | P: %d | Pos: %.0f, %.0f, %.0f", 
+    HUD_Text.Text = string.format("FPS: %d\nPing: %dms\nPlayers: %d\nPos: %.0f, %.0f, %.0f", 
         fps, ping, playerCount, pos.X, pos.Y, pos.Z)
 end)
-
 -- Ví dụ tạo thử 1 nút test menu
 createMenuButton("Test Tính Năng 1", Color3.fromRGB(0, 150, 255))
 
