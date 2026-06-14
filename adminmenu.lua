@@ -190,51 +190,67 @@ local function createMenuButton(text, color)
     return btn
 end
 
--- Biến lưu thời điểm bắt đầu để tính thời gian
+-- XÓA HOẶC BÌNH LUẬN (COMMENT) ĐOẠN CODE HUD CŨ TRƯỚC KHI DÁN CÁI NÀY VÀO
+local HUD_Gui = Instance.new("ScreenGui")
+HUD_Gui.Name = "StatsHUD"
+HUD_Gui.ResetOnSpawn = false
+HUD_Gui.Parent = Player:WaitForChild("PlayerGui")
+
+local HUD_Frame = Instance.new("Frame")
+HUD_Frame.Parent = HUD_Gui
+HUD_Frame.Size = UDim2.new(0, 220, 0, 160) -- Tăng kích thước lên 160 để chứa đủ chữ
+HUD_Frame.Position = UDim2.new(1, -230, 0, 10) 
+HUD_Frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+HUD_Frame.BackgroundTransparency = 0.5
+HUD_Frame.BorderSizePixel = 0
+Instance.new("UICorner", HUD_Frame).CornerRadius = UDim.new(0, 8)
+
+local HUD_Text = Instance.new("TextLabel")
+HUD_Text.Parent = HUD_Frame
+HUD_Text.Size = UDim2.new(1, -10, 1, -10)
+HUD_Text.Position = UDim2.new(0, 5, 0, 5)
+HUD_Text.BackgroundTransparency = 1
+HUD_Text.TextColor3 = Color3.new(1, 1, 1)
+HUD_Text.Font = Enum.Font.Code -- Font code dễ nhìn hơn cho số liệu
+HUD_Text.TextSize = 13
+HUD_Text.TextXAlignment = Enum.TextXAlignment.Left
+HUD_Text.TextYAlignment = Enum.TextYAlignment.Top
+HUD_Text.TextWrapped = true
+
+-- Logic cập nhật
 local startTime = os.time()
 
 RunService.RenderStepped:Connect(function(deltaTime)
-    -- Chỉ cập nhật khi HUD tồn tại
-    if not HUD_Gui or not HUD_Gui.Parent then return end
+    if not HUD_Text or not HUD_Text.Parent then return end
     
-    -- 1. Tính toán thời gian chơi
+    -- Tính toán
     local elapsed = os.time() - startTime
-    local hours = math.floor(elapsed / 3600)
-    local minutes = math.floor((elapsed % 3600) / 60)
-    local seconds = elapsed % 60
-    local timeStr = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+    local timeStr = string.format("%02d:%02d:%02d", math.floor(elapsed/3600), math.floor((elapsed%3600)/60), elapsed%60)
     
-    -- 2. Đếm số lượng NPC (Model có Humanoid và không thuộc về Player)
     local npcCount = 0
     for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("Model") and obj:FindFirstChild("Humanoid") then
-            -- Nếu không tìm thấy Player sở hữu nhân vật này -> đó là NPC
-            if not Players:GetPlayerFromCharacter(obj) then
-                npcCount = npcCount + 1
-            end
+        if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and not Players:GetPlayerFromCharacter(obj) then
+            npcCount = npcCount + 1
         end
     end
     
-    -- 3. Lấy thông số nhân vật
     local char = Player.Character
-    local humanoid = char and char:FindFirstChild("Humanoid")
+    local hum = char and char:FindFirstChild("Humanoid")
     local root = char and char:FindFirstChild("HumanoidRootPart")
     
-    local fps = math.floor(1 / deltaTime)
-    local ping = math.floor(Player:GetNetworkPing() * 1000)
-    local pCount = #Players:GetPlayers()
-    
-    local speed = humanoid and math.floor(humanoid.WalkSpeed) or 0
-    local jump = humanoid and math.floor(humanoid.JumpPower) or 0
-    local health = humanoid and math.floor(humanoid.Health) or 0
+    local speed = hum and math.floor(hum.WalkSpeed) or 0
+    local jump = hum and math.floor(hum.JumpPower) or 0
+    local health = hum and math.floor(hum.Health) or 0
     local pos = root and root.Position or Vector3.new(0,0,0)
     
-    -- 4. Cập nhật lên HUD
+    -- Cập nhật text
     HUD_Text.Text = string.format(
-        "⏱️ Time: %s\n👥 Players: %d | NPC: %d\n⚡ Spd: %d | Jmp: %d\n❤️ HP: %d\n🎯 Pos: %.0f, %.0f, %.0f\n📶 FPS: %d | Ping: %dms", 
-        timeStr, pCount, npcCount, speed, jump, health, pos.X, pos.Y, pos.Z, fps, ping
+        "⏱️ Time: %s\n👥 Players: %d | NPC: %d\n⚡ Speed: %d | Jump: %d\n❤️ HP: %d\n📍 Pos: %.0f, %.0f, %.0f\n📶 FPS: %d | Ping: %dms", 
+        timeStr, #Players:GetPlayers(), npcCount, speed, jump, health, pos.X, pos.Y, pos.Z, math.floor(1/deltaTime), math.floor(Player:GetNetworkPing()*1000)
     )
 end)
+
+
 -- Ví dụ tạo thử 1 nút test menu
 createMenuButton("Test Tính Năng 1", Color3.fromRGB(0, 150, 255))
 
