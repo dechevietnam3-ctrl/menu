@@ -248,7 +248,6 @@ local InvisibleHead   = createMenuButton("👤 Tàng Hình Đầu: TẮT", Color
 
 -- BỔ SUNG CÁC NÚT TROLL
 local FakeLagBtn       = createMenuButton("📶 Fake Lag (Gây giật lag ảo): TẮT", Color3.fromRGB(231, 76, 60))
-local GhostModeBtn     = createMenuButton("👻 Ghost Mode (Mờ người): TẮT", Color3.fromRGB(189, 195, 199))
 ----------------------------------------------------
 -- TẠO CÁC NÚT TROLL (MỚI)
 ----------------------------------------------------
@@ -973,51 +972,6 @@ RunService.RenderStepped:Connect(function()
     end
 end) 
 
-InvisBtn.MouseButton1Click:Connect(function()
-    isInvisible = not isInvisible
-    local char = Player.Character
-    if char then
-        for _, obj in pairs(char:GetDescendants()) do
-            -- 1. Xử lý da, quần áo, khuôn mặt (Decal)
-            if obj:IsA("BasePart") or obj:IsA("Decal") then
-                obj.Transparency = isInvisible and 1 or 0
-            end
-            
-            -- 2. Xử lý Phụ kiện (Tóc, mũ, kính, cánh...)
-            -- Phụ kiện cần tác động vào 'Handle' của nó
-            if obj:IsA("Accessory") and obj:FindFirstChild("Handle") then
-                obj.Handle.Transparency = isInvisible and 1 or 0
-            end
-        end
-    end
-    InvisBtn.Text = isInvisible and "🕶️ Tàng Hình: BẬT" or "🕶️ Tàng Hình: TẮT"
-end)
-
-WaterWalkBtn.MouseButton1Click:Connect(function()
-    waterWalkActive = not waterWalkActive
-    WaterWalkBtn.Text = waterWalkActive and "🌊 Chạy Trên Nước: BẬT" or "🌊 Chạy Trên Nước: TẮT"
-    WaterWalkBtn.BackgroundColor3 = waterWalkActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(41, 128, 185)
-end)
-
-RunService.Heartbeat:Connect(function()
-    if not waterWalkActive then return end
-    local character = Player.Character
-    local root = character and character:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-    
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterDescendantsInstances = {character}
-    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-    
-    local raycastResult = workspace:Raycast(root.Position, Vector3.new(0, -4, 0), raycastParams)
-    if raycastResult and raycastResult.Instance then
-        local mat = raycastResult.Material
-        local name = raycastResult.Instance.Name:lower()
-        if mat == Enum.Material.Water or name:find("water") or name:find("liquid") then
-            root.Velocity = Vector3.new(root.Velocity.X, 0, root.Velocity.Z)
-        end
-    end
-end)
 
 FovButton.MouseButton1Click:Connect(function()
     fovState = (fovState + 1) % 4
@@ -1145,67 +1099,6 @@ end)
 ----------------------------------------------------
 -- LOGIC TROLL MỚI THÊM VÀO
 ----------------------------------------------------
-
--- Biến trạng thái
-local ghostModeActive = false
-local ghostModel = nil
-local RunService = game:GetService("RunService")
-
-local GhostModeBtn = createMenuButton("👻 Ghost Mode: TẮT", Color3.fromRGB(155, 89, 182))
-
--- Hàm tiện ích để tắt/bật va chạm và tàng hình
-local function setGhostEffect(char, isGhosting)
-    for _, part in pairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.Transparency = isGhosting and 1 or 0
-            part.CanCollide = not isGhosting -- Tắt va chạm khi làm Ghost
-        elseif part:IsA("Decal") then
-            part.Transparency = isGhosting and 1 or 0
-        end
-    end
-end
-
-GhostModeBtn.MouseButton1Click:Connect(function()
-    ghostModeActive = not ghostModeActive
-    GhostModeBtn.Text = ghostModeActive and "👻 Ghost Mode: BẬT" or "👻 Ghost Mode: TẮT"
-    GhostModeBtn.BackgroundColor3 = ghostModeActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(155, 89, 182)
-
-    local char = Player.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-
-    if ghostModeActive then
-        -- 1. Tạo bản sao (Ghost Visual)
-        ghostModel = char:Clone()
-        ghostModel.Name = "GhostVisual"
-        
-        -- Xóa script thừa và chỉnh hiệu ứng "ma"
-        for _, obj in pairs(ghostModel:GetDescendants()) do
-            if obj:IsA("Script") or obj:IsA("LocalScript") then obj:Destroy() end
-            if obj:IsA("BasePart") then
-                obj.Material = Enum.Material.ForceField -- Hiệu ứng lấp lánh như ma
-                obj.Color = Color3.fromRGB(170, 255, 255) -- Màu xanh nhạt
-            end
-        end
-        
-        ghostModel.Parent = workspace
-        
-        -- 2. Làm tàng hình nhân vật thật và tắt va chạm
-        setGhostEffect(char, true)
-    else
-        -- 3. Hủy bỏ Ghost Mode
-        if ghostModel then ghostModel:Destroy() end
-        setGhostEffect(char, false)
-    end
-end)
-
--- Cập nhật vị trí của Clone
-RunService.Heartbeat:Connect(function()
-    if ghostModeActive and ghostModel and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
-        local char = Player.Character
-        -- Giữ clone ở phía trên nhân vật
-        ghostModel:SetPrimaryPartCFrame(char.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
-    end
-end)
 
 -- [TROLL 2] Đu Bám Người Khác
 AnnoyBtn.MouseButton1Click:Connect(function()
