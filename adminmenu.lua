@@ -254,6 +254,7 @@ local HitboxButton     = createMenuButton("⭕ Phóng To Hitbox Địch: TẮT",
 local TeamEspBtn       = createMenuButton("👥 ESP Đồng đội: TẮT", Color3.fromRGB(46, 204, 113))
 local EnemyEspBtn      = createMenuButton("💀 ESP Địch: TẮT", Color3.fromRGB(231, 76, 60))
 local SpinBotButton    = createMenuButton("🔄 Spin Bot (Xoay tròn): TẮT", Color3.fromRGB(22, 160, 133)) 
+local MapButton        = createMenuButton("🗺️ Mini Map: TẮT", Color3.fromRGB(142, 68, 173))
 local AntiRagdollBtn   = createMenuButton("🏋️ Chống Té Ngã: TẮT", Color3.fromRGB(127, 140, 141))
 local AimbotButton     = createMenuButton("🎯 Khóa Mục Tiêu (R-Click): TẮT", Color3.fromRGB(231, 76, 60))
 local CamLockBtn       = createMenuButton("🔒 Cam Lock (Khóa cứng Camera): TẮT", Color3.fromRGB(192, 57, 43))
@@ -334,7 +335,59 @@ SpeedButton.MouseButton1Click:Connect(function()
         SpeedButton.Text = "⚡ Tốc Độ: Bàn Thờ (150)"
     end
 end)
+-------------------------------
+-- Khai báo biến cần thiết
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+local Player = game:GetService("Players").LocalPlayer
+local miniMapActive = false
 
+-- Tạo khung hình Mini Map
+local MiniMapFrame = Instance.new("Frame", ScreenGui)
+MiniMapFrame.Size = UDim2.new(0, 150, 0, 150)
+MiniMapFrame.Position = UDim2.new(0, 20, 0, 100)
+MiniMapFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MiniMapFrame.Visible = false
+MiniMapFrame.ClipsDescendants = true
+Instance.new("UICorner", MiniMapFrame).CornerRadius = UDim.new(1, 0)
+
+-- Tạo Camera phụ
+local MiniCamera = Instance.new("Camera")
+MiniCamera.FieldOfView = 70
+MiniCamera.Parent = workspace
+
+-- Tạo ViewportFrame để hiển thị thế giới
+local Viewport = Instance.new("ViewportFrame", MiniMapFrame)
+Viewport.Size = UDim2.new(1, 0, 1, 0)
+Viewport.BackgroundTransparency = 1
+Viewport.CurrentCamera = MiniCamera
+
+-- Nút Toggle Mini Map
+local MapButton = createMenuButton("🗺️ Mini Map: TẮT", Color3.fromRGB(142, 68, 173))
+MapButton.MouseButton1Click:Connect(function()
+    miniMapActive = not miniMapActive
+    MiniMapFrame.Visible = miniMapActive
+    MapButton.Text = miniMapActive and "🗺️ Mini Map: BẬT" or "🗺️ Mini Map: TẮT"
+end)
+
+-- Cập nhật Mini Map liên tục
+RunService.RenderStepped:Connect(function()
+    if miniMapActive and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+        local rootPos = Player.Character.HumanoidRootPart.Position
+        -- Cố định camera trên đầu nhân vật, nhìn xuống dưới
+        MiniCamera.CFrame = CFrame.new(rootPos + Vector3.new(0, 50, 0), rootPos) * CFrame.Angles(math.rad(-90), 0, 0)
+        
+        -- Copy các đối tượng trong workspace vào Viewport (Lưu ý: Cách này có thể gây lag nếu map quá lớn)
+        Viewport:ClearAllChildren()
+        for _, obj in pairs(workspace:GetChildren()) do
+            if obj:IsA("Model") then
+                local clone = obj:Clone()
+                clone.Parent = Viewport
+            end
+        end
+    end
+end)
+------------------
 JumpButton.MouseButton1Click:Connect(function()
     jumpState = not jumpState
     local humanoid = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
