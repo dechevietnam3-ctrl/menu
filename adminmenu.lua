@@ -257,25 +257,20 @@ local SpinBotButton    = createMenuButton("🔄 Spin Bot (Xoay tròn): TẮT", C
 local AntiRagdollBtn   = createMenuButton("🏋️ Chống Té Ngã: TẮT", Color3.fromRGB(127, 140, 141))
 local AimbotButton     = createMenuButton("🎯 Khóa Mục Tiêu (R-Click): TẮT", Color3.fromRGB(231, 76, 60))
 local CamLockBtn       = createMenuButton("🔒 Cam Lock (Khóa cứng Camera): TẮT", Color3.fromRGB(192, 57, 43))
-local TriggerBotBtn    = createMenuButton("🤖 Trigger Bot (Tự Click Khi Thấy Địch): TẮT", Color3.fromRGB(41, 128, 185))
 local AntiKillBtn      = createMenuButton("🚨 Chống Chết khẩn cấp (Máu < 25%): TẮT", Color3.fromRGB(192, 41, 43))
 local NoclipButton     = createMenuButton("👻 Đi Xuyên Tường: TẮT", Color3.fromRGB(155, 89, 182))
 local FlyButton        = createMenuButton("🕊️ Chế Độ Bay v4 (Giữ E để Boost): TẮT", Color3.fromRGB(52, 152, 219))
-local WaterWalkBtn     = createMenuButton("🌊 Chạy Trên Nước (Jesus): TẮT", Color3.fromRGB(41, 128, 185))
 local FovButton        = createMenuButton("👁️ Góc Nhìn (FOV): Thường (70)", Color3.fromRGB(149, 165, 166))
 local AutoFarmBtn      = createMenuButton("💰 Tự Động Nhặt Đồ Gần Đây: TẮT", Color3.fromRGB(243, 156, 18))
 local GodButton        = createMenuButton("🛡️ Chế Độ Bất Tử: TẮT", Color3.fromRGB(192, 57, 43))
 local EspButton        = createMenuButton("👁️ Nhìn Xuyên Tường (ESP): TẮT", Color3.fromRGB(241, 196, 15))
-local InfOxygenBtn     = createMenuButton("🤿 Vô Hạn Ô-xy (Dưới nước): TẮT", Color3.fromRGB(34, 166, 179))
 local FullBrightBtn    = createMenuButton("💡 FullBright (Sáng Đêm): TẮT", Color3.fromRGB(241, 196, 15))
 local XrayButton       = createMenuButton("🧱 X-Ray (Nhìn Xuyên Tường): TẮT", Color3.fromRGB(127, 140, 141)) 
 local NpcEspBtn        = createMenuButton("👁️ ESP NPC: TẮT", Color3.fromRGB(241, 196, 15))
 local NpcHitboxBtn     = createMenuButton("⭕ Hitbox NPC: TẮT", Color3.fromRGB(211, 84, 0))
 local SpectateBtn      = createMenuButton("🔭 Xem Người Chơi (Spectate): TẮT", Color3.fromRGB(52, 152, 219))
-local InvisBtn         = createMenuButton("🕶️ Tàng Hình (Client): TẮT", Color3.fromRGB(155, 89, 182)) 
 local LayBtn          = createMenuButton("🛌 Buộc Nằm (Lay Down): TẮT", Color3.fromRGB(230, 126, 34))
 local LoopDanceBtn    = createMenuButton("💃 Nhảy Múa Liên Tục: TẮT", Color3.fromRGB(46, 204, 113))
-local InvisibleHead   = createMenuButton("👤 Tàng Hình Đầu: TẮT", Color3.fromRGB(44, 62, 80))
 
 -- BỔ SUNG CÁC NÚT TROLL
 local FakeLagBtn       = createMenuButton("📶 Fake Lag (Gây giật lag ảo): TẮT", Color3.fromRGB(231, 76, 60))
@@ -540,47 +535,6 @@ LoopDanceBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 4. Tàng Hình Đầu
-InvisibleHead.MouseButton1Click:Connect(function()
-    invisibleHeadActive = not invisibleHeadActive
-    InvisibleHead.Text = invisibleHeadActive and "👤 Đã tàng hình đầu!" or "👤 Tàng Hình Đầu: TẮT"
-    InvisibleHead.BackgroundColor3 = invisibleHeadActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(44, 62, 80)
-    
-    local head = Player.Character and Player.Character:FindFirstChild("Head")
-    if head then
-        head.Transparency = invisibleHeadActive and 1 or 0
-        -- Ẩn luôn khuôn mặt (Decal) trên đầu
-        for _, obj in pairs(head:GetChildren()) do
-            if obj:IsA("Decal") or obj:IsA("Texture") then
-                obj.Transparency = invisibleHeadActive and 1 or 0
-            end
-        end
-    end
-end) 
-
--- Khai báo biến cần thiết (đặt ở đầu script của bạn)
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
-local hitboxActive = false
-
--- HÀM CẬP NHẬT HITBOX
-local function updateHitboxes()
-    if not hitboxActive then return end
-    
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= Player and p.Character then
-            local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-            if hrp and hrp.Size.X < 10 then -- Chỉ cập nhật nếu chưa phóng to
-                hrp.Size = Vector3.new(12, 12, 12)
-                hrp.Transparency = 0.75
-                hrp.Color = Color3.fromRGB(255, 0, 0)
-                hrp.CanCollide = false 
-            end
-        end
-    end
-end
-
 -- XỬ LÝ NÚT BẤM
 HitboxButton.MouseButton1Click:Connect(function()
     hitboxActive = not hitboxActive
@@ -746,37 +700,6 @@ task.spawn(function()
     end
 end)
 
-TriggerBotBtn.MouseButton1Click:Connect(function()
-    triggerBotActive = not triggerBotActive
-    TriggerBotBtn.Text = triggerBotActive and "🤖 Trigger Bot: BẬT" or "🤖 Trigger Bot: TẮT"
-    TriggerBotBtn.BackgroundColor3 = triggerBotActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(41, 128, 185)
-end)
-
-RunService.RenderStepped:Connect(function()
-    if not triggerBotActive then return end
-    local target = Mouse.Target
-    if target and target.Parent then
-        local targetChar = target.Parent
-        if targetChar:FindFirstChildOfClass("Humanoid") and targetChar.Name ~= Player.Name then
-            local tool = Player.Character and Player.Character:FindFirstChildOfClass("Tool")
-            if tool then tool:Activate() end
-        end
-    end
-end)
-
-RunService.Heartbeat:Connect(function()
-    if not npcEspActive then return end
-    for _, model in pairs(workspace:GetDescendants()) do
-        if model:IsA("Model") and model:FindFirstChild("Humanoid") and not Players:GetPlayerFromCharacter(model) then
-            if not model:FindFirstChild("NpcHighlight") then
-                local h = Instance.new("Highlight")
-                h.Name = "NpcHighlight"
-                h.FillColor = Color3.fromRGB(0, 255, 255)
-                h.Parent = model
-            end
-        end
-    end
-end)
 
 -- Logic Hitbox NPC:
 RunService.RenderStepped:Connect(function()
@@ -789,46 +712,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end) 
-
--- [ĐÃ SỬA LỖI] Anti-Kill không bị nảy liên tục vô hạn
-local antiKillCooldown = false
-AntiKillBtn.MouseButton1Click:Connect(function()
-    antiKillActive = not antiKillActive
-    AntiKillBtn.Text = antiKillActive and "🚨 Chống Chết: BẬT" or "🚨 Chống Chết khẩn cấp: TẮT"
-    AntiKillBtn.BackgroundColor3 = antiKillActive and Color3.fromRGB(39, 174, 96) or Color3.fromRGB(192, 41, 43)
-end)
-
-RunService.Heartbeat:Connect(function()
-    if not antiKillActive or antiKillCooldown then return end
-    local char = Player.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    if hum and root and hum.Health > 0 and hum.Health < (hum.MaxHealth * 0.25) then
-        antiKillCooldown = true
-        root.CFrame = root.CFrame + Vector3.new(0, 150, 0)
-        root.Velocity = Vector3.new(0,0,0)
-        AntiKillBtn.Text = "🚨 ĐÃ CỨU NGUY KHẨN CẤP!" 
-        task.wait(2)
-        AntiKillBtn.Text = antiKillActive and "🚨 Chống Chết: BẬT" or "🚨 Chống Chết khẩn cấp: TẮT"
-        antiKillCooldown = false
-    end
-end)
-
-local RunService = game:GetService("RunService")
-local Player = game.Players.LocalPlayer
-local noclip = false
-
--- Lưu trữ các bộ phận để khôi phục trạng thái va chạm
-local function setCollisions(enabled)
-    local character = Player.Character
-    if not character then return end
-    
-    for _, part in pairs(character:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.CanCollide = not enabled
-        end
-    end
-end
 
 NoclipButton.MouseButton1Click:Connect(function()
     noclip = not noclip
