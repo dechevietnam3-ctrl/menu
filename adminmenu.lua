@@ -236,9 +236,6 @@ local layActive = false
 local loopDanceActive = false
 local invisibleHeadActive = false
 local currentDance = nil
-local ModifyPartBtn = false
-local CreatePartBtn = false
-local PrintTreeBtn  = false
 -- Trạng thái Troll mới
 local annoyActive = false
 local spamChatActive = false
@@ -271,9 +268,6 @@ local NpcEspBtn        = createMenuButton("👁️ ESP NPC: TẮT", Color3.fromR
 local NpcHitboxBtn     = createMenuButton("⭕ Hitbox NPC: TẮT", Color3.fromRGB(211, 84, 0))
 local SpectateBtn      = createMenuButton("🔭 Xem Người Chơi (Spectate): TẮT", Color3.fromRGB(52, 152, 219))
 local LayBtn           = createMenuButton("🛌 Buộc Nằm (Lay Down): TẮT", Color3.fromRGB(230, 126, 34)) 
-local ModifyPartBtn    = createMenuButton("✏️ Chỉnh Sửa Vật Thể (Click)", Color3.fromRGB(155, 89, 182))
-local CreatePartBtn    = createMenuButton("➕ Tạo Part Mới", Color3.fromRGB(39, 174, 96))
-local PrintTreeBtn     = createMenuButton("📜 In Cấu Trúc (Console F9)", Color3.fromRGB(52, 73, 94))
 local LoopDanceBtn    = createMenuButton("💃 Nhảy Múa Liên Tục: TẮT", Color3.fromRGB(46, 204, 113))
 
 -- BỔ SUNG CÁC NÚT TROLL
