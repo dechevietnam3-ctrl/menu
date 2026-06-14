@@ -464,44 +464,7 @@ JumpButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- 1. Tạo khu vực nhập ID trong menu
-local IDInput = Instance.new("TextBox")
-IDInput.Parent = Container
-IDInput.Size = UDim2.new(0, 310, 0, 40)
-IDInput.PlaceholderText = "Nhập Place ID tại đây..."
-IDInput.Text = ""
-IDInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-IDInput.TextColor3 = Color3.new(1, 1, 1)
-IDInput.Font = Enum.Font.Gotham
-IDInput.TextSize = 14
-local IDCorner = Instance.new("UICorner", IDInput)
-IDCorner.CornerRadius = UDim.new(0, 8)
 
--- 2. Tạo nút Dịch chuyển
-local JoinMapBtn = createMenuButton("🚀 Dịch chuyển đến Map ID", Color3.fromRGB(231, 76, 60))
-
--- 3. Logic xử lý
-JoinMapBtn.MouseButton1Click:Connect(function()
-	local targetPlaceId = tonumber(IDInput.Text)
-
-	if targetPlaceId then
-		JoinMapBtn.Text = "Đang chuyển..."
-		local success, result = pcall(function()
-			TeleportService:Teleport(targetPlaceId, Player)
-		end)
-
-		if not success then
-			warn("Lỗi: " .. tostring(result))
-			JoinMapBtn.Text = "Lỗi! Thử lại"
-			task.wait(2)
-			JoinMapBtn.Text = "🚀 Dịch chuyển đến Map ID"
-		end
-	else
-		IDInput.Text = "ID không hợp lệ!"
-		task.wait(1)
-		IDInput.Text = ""
-	end
-end)
 
 -- Nhảy kép & Vô hạn
 local hasDoubleJumped = false
