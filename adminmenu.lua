@@ -334,9 +334,7 @@ SpeedButton.MouseButton1Click:Connect(function()
         SpeedButton.Text = "⚡ Tốc Độ: Bàn Thờ (150)"
     end
 end)
--------------------------------
 
-------------------
 JumpButton.MouseButton1Click:Connect(function()
     jumpState = not jumpState
     local humanoid = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
