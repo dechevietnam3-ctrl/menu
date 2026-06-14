@@ -335,55 +335,80 @@ SpeedButton.MouseButton1Click:Connect(function()
     end
 end)
 -------------------------------
--- Khai báo biến cần thiết
-local RunService = game:GetService("RunService")
-local Camera = workspace.CurrentCamera
-local Player = game:GetService("Players").LocalPlayer
-local miniMapActive = false
+------------------------------------------------------------------
+-- TÍNH NĂNG MINIMAP TÍCH HỢP
+------------------------------------------------------------------
+local MiniMapActive = false
+local mapCache = {}
 
--- Tạo khung hình Mini Map
-local MiniMapFrame = Instance.new("Frame", ScreenGui)
-MiniMapFrame.Size = UDim2.new(0, 150, 0, 150)
-MiniMapFrame.Position = UDim2.new(0, 20, 0, 100)
-MiniMapFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-MiniMapFrame.Visible = false
-MiniMapFrame.ClipsDescendants = true
-Instance.new("UICorner", MiniMapFrame).CornerRadius = UDim.new(1, 0)
+-- 1. Tạo UI Minimap
+local MiniMapContainer = Instance.new("Frame", Frame) -- Thêm vào Frame chính của menu
+MiniMapContainer.Name = "MiniMapContainer"
+MiniMapContainer.Size = UDim2.new(0, 150, 0, 150)
+MiniMapContainer.Position = UDim2.new(1, 10, 0, 0)
+MiniMapContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MiniMapContainer.Visible = false
+Instance.new("UICorner", MiniMapContainer).CornerRadius = UDim.new(0, 8)
 
--- Tạo Camera phụ
-local MiniCamera = Instance.new("Camera")
-MiniCamera.FieldOfView = 70
-MiniCamera.Parent = workspace
-
--- Tạo ViewportFrame để hiển thị thế giới
-local Viewport = Instance.new("ViewportFrame", MiniMapFrame)
-Viewport.Size = UDim2.new(1, 0, 1, 0)
+local Viewport = Instance.new("ViewportFrame", MiniMapContainer)
+Viewport.Size = UDim2.new(1, -4, 1, -4)
+Viewport.Position = UDim2.new(0, 2, 0, 2)
 Viewport.BackgroundTransparency = 1
+
+local MiniCamera = Instance.new("Camera", Viewport)
 Viewport.CurrentCamera = MiniCamera
 
--- Nút Toggle Mini Map
-local MapButton = createMenuButton("🗺️ Mini Map: TẮT", Color3.fromRGB(142, 68, 173))
-MapButton.MouseButton1Click:Connect(function()
-    miniMapActive = not miniMapActive
-    MiniMapFrame.Visible = miniMapActive
-    MapButton.Text = miniMapActive and "🗺️ Mini Map: BẬT" or "🗺️ Mini Map: TẮT"
-end)
-
--- Cập nhật Mini Map liên tục
-RunService.RenderStepped:Connect(function()
-    if miniMapActive and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
-        local rootPos = Player.Character.HumanoidRootPart.Position
-        -- Cố định camera trên đầu nhân vật, nhìn xuống dưới
-        MiniCamera.CFrame = CFrame.new(rootPos + Vector3.new(0, 50, 0), rootPos) * CFrame.Angles(math.rad(-90), 0, 0)
-        
-        -- Copy các đối tượng trong workspace vào Viewport (Lưu ý: Cách này có thể gây lag nếu map quá lớn)
-        Viewport:ClearAllChildren()
-        for _, obj in pairs(workspace:GetChildren()) do
-            if obj:IsA("Model") then
-                local clone = obj:Clone()
-                clone.Parent = Viewport
-            end
+-- 2. Hàm Logic
+local function setupMapCache()
+    Viewport:ClearAllChildren()
+    mapCache = {}
+    local mapFolder = workspace:FindFirstChild("Map") or workspace 
+    
+    for _, obj in pairs(mapFolder:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            local clone = obj:Clone()
+            clone.Parent = Viewport
+            mapCache[obj] = clone
         end
+    end
+end
+
+local function updateMiniMap()
+    if not MiniMapActive or not Player.Character then return end
+    local rootPart = Player.Character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+
+    -- Update Camera
+    MiniCamera.CFrame = CFrame.new(rootPart.Position + Vector3.new(0, 100, 0), rootPart.Position) 
+                       * CFrame.Angles(math.rad(-90), 0, 0)
+    
+    -- Update Objects
+    for original, clone in pairs(mapCache) do
+        if original and original.Parent then
+            clone.CFrame = original.CFrame
+        else
+            clone:Destroy()
+            mapCache[original] = nil
+        end
+    end
+end
+
+-- 3. Đăng ký sự kiện
+RunService.Heartbeat:Connect(updateMiniMap)
+
+-- 4. Nút bấm (Giả sử bạn đã có hàm createMenuButton trong script của bạn)
+local MiniMapBtn = createMenuButton("🗺️ Minimap: OFF", Color3.fromRGB(155, 89, 182))
+MiniMapBtn.MouseButton1Click:Connect(function()
+    MiniMapActive = not MiniMapActive
+    if MiniMapActive then
+        setupMapCache()
+        MiniMapContainer.Visible = true
+        MiniMapBtn.Text = "🗺️ Minimap: ON"
+        MiniMapBtn.BackgroundColor3 = Color3.fromRGB(39, 174, 96)
+    else
+        MiniMapContainer.Visible = false
+        MiniMapBtn.Text = "🗺️ Minimap: OFF"
+        MiniMapBtn.BackgroundColor3 = Color3.fromRGB(155, 89, 182)
     end
 end)
 ------------------
