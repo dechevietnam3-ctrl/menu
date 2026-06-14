@@ -3,7 +3,6 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
-local Stats = game:GetService("Stats") -- CẦN THIẾT ĐỂ LẤY MEMORY
 
 local Player = Players.LocalPlayer
 local Mouse = Player:GetMouse()
