@@ -18,36 +18,6 @@ ScreenGui.Name = "PremiumMenu_v6_Ultra"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = Player:WaitForChild("PlayerGui")
 
--- 3. NÚT TOGGLE (Mở Menu)
-local ToggleButton = Instance.new("TextButton", ScreenGui)
-ToggleButton.Size = UDim2.new(0, 55, 0, 55)
-ToggleButton.Position = UDim2.new(0, 20, 0.5, -27)
-ToggleButton.Text = "☰"
-ToggleButton.TextScaled = true
-ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
-ToggleButton.TextColor3 = Color3.new(1, 1, 1)
-local ToggleCorner = Instance.new("UICorner", ToggleButton)
-ToggleCorner.CornerRadius = UDim.new(1, 0)
-
-ToggleButton.MouseButton1Click:Connect(function() Frame.Visible = not Frame.Visible end)
-
--- Kéo thả ToggleButton
-local dragging, dragStart, startPos
-ToggleButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = ToggleButton.Position
-    end
-end)
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - dragStart
-        ToggleButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end end)
-
 -- Frame chính
 local Frame = Instance.new("Frame")
 Frame.Parent = ScreenGui
@@ -61,11 +31,46 @@ local FrameCorner = Instance.new("UICorner")
 FrameCorner.CornerRadius = UDim.new(0, 16)
 FrameCorner.Parent = Frame
 
+-- 3. NÚT TOGGLE (Mở Menu)
+local ToggleButton = Instance.new("TextButton", ScreenGui)
+ToggleButton.Size = UDim2.new(0, 55, 0, 55)
+ToggleButton.Position = UDim2.new(0, 20, 0.5, -27)
+ToggleButton.Text = "☰"
+ToggleButton.TextScaled = true
+ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+ToggleButton.TextColor3 = Color3.new(1, 1, 1)
+local ToggleCorner = Instance.new("UICorner", ToggleButton)
+ToggleCorner.CornerRadius = UDim.new(1, 0)
+
+ToggleButton.MouseButton1Click:Connect(function() 
+    Frame.Visible = not Frame.Visible 
+end)
+
+-- Kéo thả ToggleButton
+local draggingToggle, dragStartToggle, startPosToggle
+ToggleButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        draggingToggle = true
+        dragStartToggle = input.Position
+        startPosToggle = ToggleButton.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if draggingToggle and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStartToggle
+        ToggleButton.Position = UDim2.new(startPosToggle.X.Scale, startPosToggle.X.Offset + delta.X, startPosToggle.Y.Scale, startPosToggle.Y.Offset + delta.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input) 
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
+        draggingToggle = false 
+    end 
+end)
+
 -- Thanh tiêu đề
-local TitleBar = Instance.new("TextButton")
+local TitleBar = Instance.new("Frame") -- Đổi từ TextButton thành Frame để tránh xung đột click
 TitleBar.Size = UDim2.new(1, 0, 0, 50)
 TitleBar.BackgroundTransparency = 1
-TitleBar.Text = ""
 TitleBar.Parent = Frame
 
 local Title = Instance.new("TextLabel")
@@ -77,7 +82,7 @@ Title.TextColor3 = Color3.fromRGB(0, 210, 255)
 Title.TextSize = 13
 Title.Font = Enum.Font.GothamBold
 
--- Nút đóng (X)
+-- NÚT ĐÓNG (X) - ĐÃ SỬA LỖI
 local CloseButton = Instance.new("TextButton")
 CloseButton.Parent = Frame
 CloseButton.Size = UDim2.new(0, 28, 0, 28)
@@ -87,38 +92,63 @@ CloseButton.TextSize = 14
 CloseButton.Font = Enum.Font.GothamBold
 CloseButton.BackgroundColor3 = Color3.fromRGB(240, 50, 50)
 CloseButton.TextColor3 = Color3.new(1,1,1)
-CloseButton.ZIndex = 5
+CloseButton.ZIndex = 10 -- Đẩy ZIndex lên cao hẳn để không bị che khuất
 
 local CloseCorner = Instance.new("UICorner")
 CloseCorner.CornerRadius = UDim.new(0, 6)
 CloseCorner.Parent = CloseButton
 
--- Thùng chứa cuộn (Đã nâng cấp)
+-- Chức năng tắt Menu khi bấm nút X
+CloseButton.MouseButton1Click:Connect(function()
+    Frame.Visible = false
+end)
+
+-- KÉO THẢ MENU CHÍNH (Tính năng thêm giúp menu chuyên nghiệp hơn)
+local dragToggle, dragInput, dragStart, startPos
+local function updateInput(input)
+    local delta = input.Position - dragStart
+    Frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragToggle = true
+        dragStart = input.Position
+        startPos = Frame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragToggle = false end
+        end)
+    end
+end)
+TitleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragToggle then updateInput(input) end
+end)
+
+-- Thùng chứa cuộn
 local Container = Instance.new("ScrollingFrame")
 Container.Parent = Frame
 Container.Size = UDim2.new(1, -10, 1, -65)
 Container.Position = UDim2.new(0, 5, 0, 55)
 Container.BackgroundTransparency = 1
-Container.ScrollBarThickness = 6 -- Tăng nhẹ để dễ kéo hơn
+Container.ScrollBarThickness = 6
 Container.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
 Container.BorderSizePixel = 0
-
--- TỰ ĐỘNG CẬP NHẬT KÍCH THƯỚC (Nâng cấp quan trọng nhất)
 Container.AutomaticCanvasSize = Enum.AutomaticSize.Y 
 
 local UIListLayout = Instance.new("UIListLayout")
 UIListLayout.Parent = Container
 UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 10) -- Tăng padding cho thoáng mắt
+UIListLayout.Padding = UDim.new(0, 10)
 
--- Thêm khoảng cách lề bên trong cho các nút (giúp nút không bị dính sát mép)
 local UIPadding = Instance.new("UIPadding")
 UIPadding.Parent = Container
 UIPadding.PaddingTop = UDim.new(0, 10)
 UIPadding.PaddingBottom = UDim.new(0, 10)
-local TweenService = game:GetService("TweenService")
 
+-- Hàm tạo Button
 local function createMenuButton(text, color)
     local btn = Instance.new("TextButton")
     btn.Parent = Container
@@ -135,7 +165,6 @@ local function createMenuButton(text, color)
     corner.Parent = btn
     
     local originalColor = btn.BackgroundColor3
-    -- Nâng độ sáng nhẹ cho hover
     local hoverColor = Color3.new(
         math.min(originalColor.R + 0.15, 1),
         math.min(originalColor.G + 0.15, 1),
@@ -150,7 +179,6 @@ local function createMenuButton(text, color)
         TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = originalColor}):Play()
     end)
     
-    -- Thêm hiệu ứng nhấn (Nhấn xuống nút hơi nhỏ lại)
     btn.MouseButton1Down:Connect(function()
         TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(0, 300, 0, 38)}):Play()
     end)
@@ -161,6 +189,9 @@ local function createMenuButton(text, color)
     
     return btn
 end
+
+-- Ví dụ tạo thử 1 nút test menu
+createMenuButton("Test Tính Năng 1", Color3.fromRGB(0, 150, 255))
 
 ----------------------------------------------------
 -- QUẢN LÝ TRẠNG THÁI TOÀN CỤC
