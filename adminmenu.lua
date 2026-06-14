@@ -464,6 +464,45 @@ JumpButton.MouseButton1Click:Connect(function()
     end
 end)
 
+-- 1. Tạo khu vực nhập ID trong menu
+local IDInput = Instance.new("TextBox")
+IDInput.Parent = Container
+IDInput.Size = UDim2.new(0, 310, 0, 40)
+IDInput.PlaceholderText = "Nhập Place ID tại đây..."
+IDInput.Text = ""
+IDInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+IDInput.TextColor3 = Color3.new(1, 1, 1)
+IDInput.Font = Enum.Font.Gotham
+IDInput.TextSize = 14
+local IDCorner = Instance.new("UICorner", IDInput)
+IDCorner.CornerRadius = UDim.new(0, 8)
+
+-- 2. Tạo nút Dịch chuyển
+local JoinMapBtn = createMenuButton("🚀 Dịch chuyển đến Map ID", Color3.fromRGB(231, 76, 60))
+
+-- 3. Logic xử lý
+JoinMapBtn.MouseButton1Click:Connect(function()
+	local targetPlaceId = tonumber(IDInput.Text)
+
+	if targetPlaceId then
+		JoinMapBtn.Text = "Đang chuyển..."
+		local success, result = pcall(function()
+			TeleportService:Teleport(targetPlaceId, Player)
+		end)
+
+		if not success then
+			warn("Lỗi: " .. tostring(result))
+			JoinMapBtn.Text = "Lỗi! Thử lại"
+			task.wait(2)
+			JoinMapBtn.Text = "🚀 Dịch chuyển đến Map ID"
+		end
+	else
+		IDInput.Text = "ID không hợp lệ!"
+		task.wait(1)
+		IDInput.Text = ""
+	end
+end)
+
 -- Nhảy kép & Vô hạn
 local hasDoubleJumped = false
 local lastJumpTime = 0
@@ -486,62 +525,6 @@ end)
 local TeleportService = game:GetService("TeleportService")
 local Player = game.Players.LocalPlayer
 
--- 1. Tạo khu vực nhập ID
-local IDInput = Instance.new("TextBox")
-IDInput.Parent = Container
-IDInput.Size = UDim2.new(0, 310, 0, 40)
-IDInput.PlaceholderText = "Nhập Place ID tại đây..."
-IDInput.Text = ""
-IDInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-IDInput.TextColor3 = Color3.new(1, 1, 1)
-IDInput.Font = Enum.Font.GothamSemibold
-IDInput.TextSize = 14
-IDInput.ClearTextOnFocus = false -- Không xóa chữ khi bấm vào
-local IDCorner = Instance.new("UICorner", IDInput)
-IDCorner.CornerRadius = UDim.new(0, 8)
-
--- 2. Tạo nút Dịch chuyển
-local JoinMapBtn = createMenuButton("🚀 Dịch chuyển đến Map ID", Color3.fromRGB(231, 76, 60))
-
--- 3. Logic nâng cao
-local isTeleporting = false -- Biến chống spam
-
-JoinMapBtn.MouseButton1Click:Connect(function()
-    if isTeleporting then return end
-    
-    local targetPlaceId = tonumber(IDInput.Text)
-    
-    if targetPlaceId then
-        isTeleporting = true
-        local originalText = JoinMapBtn.Text
-        local originalColor = JoinMapBtn.BackgroundColor3
-        
-        -- Cập nhật trạng thái UI
-        JoinMapBtn.Text = "Đang kết nối..."
-        JoinMapBtn.BackgroundColor3 = Color3.fromRGB(192, 57, 43) -- Màu tối hơn
-        
-        local success, result = pcall(function()
-            -- Kiểm tra xem Place ID có tồn tại hay không trước khi dịch chuyển
-            TeleportService:Teleport(targetPlaceId, Player)
-        end)
-        
-        if not success then
-            warn("Lỗi dịch chuyển: " .. tostring(result))
-            JoinMapBtn.Text = "Lỗi! Thử lại"
-            JoinMapBtn.BackgroundColor3 = Color3.fromRGB(231, 76, 60)
-            
-            task.wait(2)
-            JoinMapBtn.Text = originalText
-            JoinMapBtn.BackgroundColor3 = originalColor
-            isTeleporting = false
-        end
-    else
-        -- Hiệu ứng báo lỗi nhẹ khi nhập sai
-        IDInput.Text = "ID không hợp lệ!"
-        task.wait(1)
-        IDInput.Text = ""
-    end
-end)
 
 InfJumpButton.MouseButton1Click:Connect(function()
     infJumpActive = not infJumpActive
