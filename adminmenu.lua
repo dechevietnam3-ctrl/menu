@@ -188,7 +188,8 @@ local function createMenuButton(text, color)
     end)
     
     return btn
-end
+end 
+
 -- XÓA HOẶC BÌNH LUẬN (COMMENT) ĐOẠN CODE HUD CŨ TRƯỚC KHI DÁN CÁI NÀY VÀO
 local HUD_Gui = Instance.new("ScreenGui")
 HUD_Gui.Name = "StatsHUD"
