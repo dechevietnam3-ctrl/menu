@@ -338,14 +338,17 @@ end)
 ------------------------------------------------------------------
 -- TÍNH NĂNG MINIMAP TÍCH HỢP
 ------------------------------------------------------------------
+------------------------------------------------------------------
+-- TÍCH HỢP MINIMAP (Copy đoạn này dán vào cuối file)
+------------------------------------------------------------------
 local MiniMapActive = false
 local mapCache = {}
 
--- 1. Tạo UI Minimap
-local MiniMapContainer = Instance.new("Frame", Frame) -- Thêm vào Frame chính của menu
+-- 1. Tạo Container UI nằm trong Frame menu chính
+local MiniMapContainer = Instance.new("Frame", Frame)
 MiniMapContainer.Name = "MiniMapContainer"
 MiniMapContainer.Size = UDim2.new(0, 150, 0, 150)
-MiniMapContainer.Position = UDim2.new(1, 10, 0, 0)
+MiniMapContainer.Position = UDim2.new(0, 10, 0, 300) -- Điều chỉnh vị trí tại đây
 MiniMapContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 MiniMapContainer.Visible = false
 Instance.new("UICorner", MiniMapContainer).CornerRadius = UDim.new(0, 8)
@@ -354,15 +357,19 @@ local Viewport = Instance.new("ViewportFrame", MiniMapContainer)
 Viewport.Size = UDim2.new(1, -4, 1, -4)
 Viewport.Position = UDim2.new(0, 2, 0, 2)
 Viewport.BackgroundTransparency = 1
+Viewport.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 
 local MiniCamera = Instance.new("Camera", Viewport)
 Viewport.CurrentCamera = MiniCamera
 
--- 2. Hàm Logic
+-- 2. Hàm Setup (Lấy map)
 local function setupMapCache()
     Viewport:ClearAllChildren()
     mapCache = {}
-    local mapFolder = workspace:FindFirstChild("Map") or workspace 
+    
+    -- Lưu ý: Phải có Folder tên "Map" trong Workspace
+    local mapFolder = workspace:FindFirstChild("Map") 
+    if not mapFolder then warn("⚠️ Cảnh báo: Chưa tạo Folder 'Map' trong Workspace!") return end
     
     for _, obj in pairs(mapFolder:GetDescendants()) do
         if obj:IsA("BasePart") then
@@ -373,7 +380,8 @@ local function setupMapCache()
     end
 end
 
-local function updateMiniMap()
+-- 3. Hàm Update (Chạy mỗi frame)
+RunService.Heartbeat:Connect(function()
     if not MiniMapActive or not Player.Character then return end
     local rootPart = Player.Character:FindFirstChild("HumanoidRootPart")
     if not rootPart then return end
@@ -382,7 +390,7 @@ local function updateMiniMap()
     MiniCamera.CFrame = CFrame.new(rootPart.Position + Vector3.new(0, 100, 0), rootPart.Position) 
                        * CFrame.Angles(math.rad(-90), 0, 0)
     
-    -- Update Objects
+    -- Update vị trí vật thể clone
     for original, clone in pairs(mapCache) do
         if original and original.Parent then
             clone.CFrame = original.CFrame
@@ -391,15 +399,13 @@ local function updateMiniMap()
             mapCache[original] = nil
         end
     end
-end
+end)
 
--- 3. Đăng ký sự kiện
-RunService.Heartbeat:Connect(updateMiniMap)
-
--- 4. Nút bấm (Giả sử bạn đã có hàm createMenuButton trong script của bạn)
+-- 4. Tạo nút bật/tắt (Sử dụng hàm createMenuButton của bạn)
 local MiniMapBtn = createMenuButton("🗺️ Minimap: OFF", Color3.fromRGB(155, 89, 182))
 MiniMapBtn.MouseButton1Click:Connect(function()
     MiniMapActive = not MiniMapActive
+    
     if MiniMapActive then
         setupMapCache()
         MiniMapContainer.Visible = true
