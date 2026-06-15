@@ -513,6 +513,91 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
+-- Thêm nút mở Dex vào menu của bạn
+local DexButton = createMenuButton("🔍 Mở DarkDex V3", Color3.fromRGB(155, 89, 182))
+
+DexButton.MouseButton1Click:Connect(function()
+	-- Kiểm tra xem đã tải chưa để tránh tải lại nhiều lần gây lag
+	if not _G.DexLoaded then
+		DexButton.Text = "⏳ Đang tải Dex..."
+
+		-- Dùng pcall để tránh script bị crash nếu link hỏng
+		local success, result = pcall(function()
+			loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-DARKDEX-V3-33102"))()
+		end)
+
+		if success then
+			_G.DexLoaded = true
+			DexButton.Text = "✅ Đã mở Dex"
+		else
+			DexButton.Text = "❌ Lỗi tải Dex"
+			warn("Không thể tải DarkDex: " .. tostring(result))
+		end
+	else
+		DexButton.Text = "🔍 Mở DarkDex V3"
+		_G.DexLoaded = false
+		-- Lưu ý: DarkDex thường không có hàm "đóng" trực tiếp, 
+		-- bạn phải xóa thủ công bằng cách tìm trong CoreGui hoặc PlayerGui nếu cần.
+	end
+end)
+
+-- CHỨC NĂNG CAMERA TRÊN CAO CÓ NÚT ĐIỀU CHỈNH
+----------------------------------------------------
+local isTopDownCamActive = false
+local cameraHeight = 200   -- Độ cao mặc định
+local camGui = nil -- Biến lưu GUI nút bấm
+
+local CamTopDownBtn = createMenuButton("🎥 Camera Trên Cao: TẮT", Color3.fromRGB(155, 89, 182))
+
+-- Hàm tạo GUI điều khiển
+local function createCamControls()
+	camGui = Instance.new("ScreenGui", Player:WaitForChild("PlayerGui"))
+	camGui.Name = "CamControls"
+
+	local frame = Instance.new("Frame", camGui)
+	frame.Size = UDim2.new(0, 120, 0, 60)
+	frame.Position = UDim2.new(0.5, -60, 0.8, 0)
+	frame.BackgroundTransparency = 1
+
+	local btnUp = Instance.new("TextButton", frame)
+	btnUp.Size = UDim2.new(0, 50, 0, 50)
+	btnUp.Position = UDim2.new(0, 0, 0, 0)
+	btnUp.Text = "▲"
+	btnUp.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	btnUp.TextColor3 = Color3.new(1, 1, 1)
+	Instance.new("UICorner", btnUp)
+
+	local btnDown = Instance.new("TextButton", frame)
+	btnDown.Size = UDim2.new(0, 50, 0, 50)
+	btnDown.Position = UDim2.new(0.6, 0, 0, 0)
+	btnDown.Text = "▼"
+	btnDown.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	btnDown.TextColor3 = Color3.new(1, 1, 1)
+	Instance.new("UICorner", btnDown)
+
+	-- Xử lý tăng/giảm
+	btnUp.MouseButton1Click:Connect(function() cameraHeight = cameraHeight + 5 end)
+	btnDown.MouseButton1Click:Connect(function() cameraHeight = math.max(10, cameraHeight - 5) end)
+end
+
+CamTopDownBtn.MouseButton1Click:Connect(function()
+	isTopDownCamActive = not isTopDownCamActive
+
+	if isTopDownCamActive then
+		Camera.CameraType = Enum.CameraType.Scriptable
+		createCamControls() -- Hiện nút
+		CamTopDownBtn.Text = "🎥 Camera Trên Cao: BẬT"
+		CamTopDownBtn.BackgroundColor3 = Color3.fromRGB(39, 174, 96)
+	else
+		Camera.CameraType = Enum.CameraType.Custom
+		Camera.CameraSubject = Player.Character and Player.Character:FindFirstChild("Humanoid")
+		if camGui then camGui:Destroy() end -- Xóa nút
+		CamTopDownBtn.Text = "🎥 Camera Trên Cao: TẮT"
+		CamTopDownBtn.BackgroundColor3 = Color3.fromRGB(155, 89, 182)
+	end
+end)
+
+
 RunService.Heartbeat:Connect(function()
     local humanoid = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
     if humanoid and humanoid:GetState() == Enum.HumanoidStateType.Landed then
