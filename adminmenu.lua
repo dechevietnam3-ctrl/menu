@@ -580,23 +580,40 @@ local function createCamControls()
 	btnDown.MouseButton1Click:Connect(function() cameraHeight = math.max(10, cameraHeight - 5) end)
 end
 
+local camUpdateConnection = nil 
+
 CamTopDownBtn.MouseButton1Click:Connect(function()
 	isTopDownCamActive = not isTopDownCamActive
 
 	if isTopDownCamActive then
 		Camera.CameraType = Enum.CameraType.Scriptable
-		createCamControls() -- Hiện nút
+		createCamControls()
+
+		-- BẮT ĐẦU CẬP NHẬT CAMERA LIÊN TỤC
+		camUpdateConnection = RunService.RenderStepped:Connect(function()
+			if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+				local targetPos = Player.Character.HumanoidRootPart.Position
+				-- Đặt camera nhìn từ trên xuống (trục Y là độ cao)
+				Camera.CFrame = CFrame.new(targetPos + Vector3.new(0, cameraHeight, 0), targetPos)
+			end
+		end)
+
 		CamTopDownBtn.Text = "🎥 Camera Trên Cao: BẬT"
 		CamTopDownBtn.BackgroundColor3 = Color3.fromRGB(39, 174, 96)
 	else
+		-- DỪNG CẬP NHẬT KHI TẮT
+		if camUpdateConnection then
+			camUpdateConnection:Disconnect()
+			camUpdateConnection = nil
+		end
+
 		Camera.CameraType = Enum.CameraType.Custom
 		Camera.CameraSubject = Player.Character and Player.Character:FindFirstChild("Humanoid")
-		if camGui then camGui:Destroy() end -- Xóa nút
+		if camGui then camGui:Destroy() end
 		CamTopDownBtn.Text = "🎥 Camera Trên Cao: TẮT"
 		CamTopDownBtn.BackgroundColor3 = Color3.fromRGB(155, 89, 182)
 	end
 end)
-
 
 RunService.Heartbeat:Connect(function()
     local humanoid = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
