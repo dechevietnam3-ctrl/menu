@@ -340,7 +340,26 @@ growtab:CreateButton("Teddy Hub", function()
 end)
 
 bloxtab:CreateButton("BananaHub", function()
-	loadstring(game:HttpGet("https://raw.githubusercontent.com/hdanhvip/hdanhhub/refs/heads/main/BananaHub.lua.txt"))()
+	loadstring(game:HttpGet("https://github.com/LuaCrack/ALLVERSIONFIXED/raw/refs/heads/main/ZisHrVn"))() (đã chỉnh sửa)Thứ Ba, 24 Tháng Hai, 2026 8:16 CH
+
+4
+
+2
+
+1
+
+1
+Thêm Biểu Cảm
+:sob:
+Nhấn để tương tác
+:regional_indicator_h:
+Nhấn để tương tác
+:100:
+Nhấn để tương tác
+Thêm Biểu Cảm
+Chuyển tiếp
+Những Mục Khác
+
 end)
 
 bloxtab:CreateButton("HUB_VIP_BY_HAO", function()
