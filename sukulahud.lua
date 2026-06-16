@@ -311,6 +311,44 @@ local Window = BananaLib:CreateWindow("BANANA REMAKE")
 local MainTab = Window:CreateTab("Main")
 
 -- Tạo Trang phụ (Tab Teleport) - Hiện đang trống để bạn tự thêm tính năng
-local TeleportTab = Window:CreateTab("Teleport")
+local bloxtab = Window:CreateTab("Blox Fruits")
 
-local TeleportTab = Window:CreateTab("script")
+local growtab = Window:CreateTab("grow a garden 2 ")
+
+growtab:CreateButton("Realkid hub", function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/realkidhub/realkid/refs/heads/main/main.lua"))()
+end)
+
+growtab:CreateButton("Bingfrood dự đoán hạn giống ", function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/hanniii1/Loader/refs/heads/main/BFLoader.lua"))()
+end)
+
+growtab:CreateButton("colaGaG2 ", function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/Bubu2k/robloxscript/refs/heads/main/colaGaG2.lua"))()
+end)
+
+
+growtab:CreateButton("foxnameGaG2 ", function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/Bubu2k/robloxscript/refs/heads/main/foxnameGaG2.lua"))()
+end)
+
+
+growtab:CreateButton("Teddy Hub", function()
+	-- Đợi game load xong hoàn toàn rồi mới chạy script
+	repeat task.wait() until game:IsLoaded() and game:GetService("Players") and game.Players.LocalPlayer and game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/Teddyseetink/Haidepzai/refs/heads/main/main.lua"))()
+end)
+
+bloxtab:CreateButton("BananaHub", function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/hdanhvip/hdanhhub/refs/heads/main/BananaHub.lua.txt"))()
+end)
+
+bloxtab:CreateButton("HUB_VIP_BY_HAO", function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/TranGiaHao-source/HaoModHub/refs/heads/main/HUB_VIP_BY_HAO"))()
+end)
+
+bloxtab:CreateButton("trauhubv10", function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/trungdao2k4/buffalo/refs/heads/main/trauhubv10"))()
+end)
+
+
