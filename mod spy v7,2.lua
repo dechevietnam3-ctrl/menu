@@ -26,7 +26,7 @@ local Workspace = game:GetService("Workspace")
 
 -- ============ ANTI-HACK DETECTION ENGINE ============
 local AntiHackDetector = {
-    Version = "7.3.0",
+    Version = "7.2.0",
     
     -- Kết quả phát hiện
     DetectionResult = {
