@@ -1,16 +1,14 @@
--- ============ SPY V7.2 - ANTI-HACK ASSESSMENT PRO MAX ============
+-- ============ SPY V7.4 - ULTIMATE ANTI-HACK & BAN PROTECTION ============
 -- 
--- 🎯 TÍNH NĂNG CHI TIẾT:
--- 1. Phát hiện Anti-Speed (chống chạy nhanh)
--- 2. Phát hiện Anti-Jump (chống nhảy cao)
--- 3. Phát hiện Anti-Fly (chống bay)
--- 4. Phát hiện Anti-Noclip (chống xuyên tường)
--- 5. Phát hiện Anti-Spin (chống xoay)
--- 6. Phát hiện Anti-Teleport (chống dịch chuyển)
--- 7. Phát hiện Anti-GodMode (chống bất tử)
--- 8. Phát hiện Anti-SilentAim (chống tự động ngắm)
--- 9. Phát hiện Anti-SpeedHack (chống tăng tốc)
--- 10. Phát hiện Anti-ClickTeleport (chống teleport click)
+-- 🎯 TÍNH NĂNG SPY CHÍNH:
+-- 1. Remote Spy - Bắt tất cả remote gửi lên server
+-- 2. Ban Detection - Phát hiện lệnh ban từ anti-cheat
+-- 3. Auto Block - Tự động chặn remote nguy hiểm
+-- 4. Anti-Cheat Traffic Monitor - Giám sát traffic anti-cheat
+-- 5. Smart Protection - Tự động bảo vệ khi phát hiện nguy cơ
+-- 6. Real-time Alert - Cảnh báo khi anti-cheat đang quét
+-- 7. Log All Remotes - Ghi log tất cả remote
+-- 8. Pattern Detection - Phát hiện pattern nguy hiểm
 -- ===========================================================
 
 -- ============ SERVICES ============
@@ -23,802 +21,534 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
+local TeleportService = game:GetService("TeleportService")
 
--- ============ ANTI-HACK DETECTION ENGINE ============
-local AntiHackDetector = {
-    Version = "7.2.0",
-    
-    -- Kết quả phát hiện
-    DetectionResult = {
-        GameName = "",
-        SecurityScore = 0,
-        AntiCheatType = "Unknown",
-        RiskLevel = "Unknown",
-        AntiSpeed = {detected = false, confidence = 0, details = ""},
-        AntiJump = {detected = false, confidence = 0, details = ""},
-        AntiFly = {detected = false, confidence = 0, details = ""},
-        AntiNoclip = {detected = false, confidence = 0, details = ""},
-        AntiSpin = {detected = false, confidence = 0, details = ""},
-        AntiTeleport = {detected = false, confidence = 0, details = ""},
-        AntiGodMode = {detected = false, confidence = 0, details = ""},
-        AntiSilentAim = {detected = false, confidence = 0, details = ""},
-        AntiSpeedHack = {detected = false, confidence = 0, details = ""},
-        AntiClickTeleport = {detected = false, confidence = 0, details = ""},
-        Vulnerabilities = {},
-        Recommendations = {},
-        ExecutorCompat = {},
-        DetectedAntiCheats = {},
+-- ============ SPY ENGINE ============
+local SpyEngine = {
+    Enabled = false,
+    RemoteLogs = {},
+    BlockedRemotes = {},
+    SuspiciousRemotes = {},
+    AntiCheatTraffic = {},
+    BanDetected = false,
+    BanCount = 0,
+    LastBanAttempt = 0,
+    ProtectionLevel = "Normal", -- Normal / High / Ultra
+    Stats = {
+        TotalRemotes = 0,
+        BlockedCount = 0,
+        BanAttempts = 0,
+        SuspiciousCount = 0,
+        ActiveConnections = 0,
     },
+}
+
+-- ============ ANTI-CHEAT PATTERNS ============
+local BanPatterns = {
+    -- Lệnh ban thường gặp
+    BanCommands = {
+        "Ban", "Kick", "Remove", "Delete", "Destroy",
+        "Terminate", "Kill", "ExecuteBan", "BanPlayer",
+        "KickPlayer", "RemovePlayer", "BanUser", "KickUser",
+        "BanA", "BanB", "BanC", "KickA", "KickB",
+    },
+    -- Từ khóa nguy hiểm
+    DangerousKeywords = {
+        "cheat", "hack", "exploit", "detect", "ban",
+        "kick", "suspicious", "unauthorized", "violation",
+        "tamper", "inject", "modified", "memory",
+        "speed", "fly", "jump", "noclip", "teleport",
+        "godmode", "aimbot", "silentaim", "spinhack",
+    },
+    -- Remote nguy hiểm
+    DangerousRemotes = {
+        "BanPlayer", "KickPlayer", "ExecuteBan",
+        "AntiCheatBan", "DetectionBan", "SecurityBan",
+        "BanCheck", "KickCheck", "VerifyBan",
+    },
+}
+
+-- ============ SPY HOOK ENGINE ============
+local SpyHooker = {
+    Hooked = {},
+    OriginalFunctions = {},
     
-    -- ============ PHÁT HIỆN CHI TIẾT ============
-    
-    -- 1. ANTI-SPEED (chống chạy nhanh)
-    DetectAntiSpeed = function()
-        local result = {detected = false, confidence = 0, details = ""}
-        local checks = 0
-        local found = 0
-        
-        -- Check 1: Remote kiểm tra tốc độ
-        for _, child in pairs(ReplicatedStorage:GetChildren()) do
-            if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
-                local name = child.Name:lower()
-                if name:find("speed") or name:find("velocity") or name:find("movement") or 
-                   name:find("walk") or name:find("run") or name:find("sprint") then
-                    found = found + 1
-                end
-            end
+    -- Hook tất cả remote
+    HookAll = function()
+        local count = 0
+        for _, service in pairs({ReplicatedStorage, Player, game:GetService("ReplicatedFirst")}) do
+            count = count + SpyHooker:HookService(service)
         end
-        checks = checks + 1
         
-        -- Check 2: Script xử lý tốc độ
-        for _, script in pairs(Workspace:GetChildren()) do
-            if script:IsA("Script") or script:IsA("LocalScript") then
-                local src = script:FindFirstChild("Source") and script.Source.Value or ""
-                if type(src) == "string" then
-                    if src:find("WalkSpeed") or src:find("MaxSpeed") or src:find("Velocity") then
-                        found = found + 1
-                        break
-                    end
-                end
-            end
-        end
-        checks = checks + 1
+        -- Hook workspace scripts
+        SpyHooker:HookScripts()
         
-        -- Check 3: Attribute hoặc Value
-        if Player.Character then
-            if Player.Character:FindFirstChild("WalkSpeed") or 
-               Player.Character:FindFirstChild("MaxSpeed") or
-               Player.Character:FindFirstChild("SpeedLimit") then
-                found = found + 1
-            end
-        end
-        checks = checks + 1
-        
-        -- Đánh giá
-        local confidence = math.min((found / checks) * 100, 100)
-        result.detected = confidence > 30
-        result.confidence = confidence
-        result.details = string.format("%s detected (confidence: %.1f%%)", 
-            result.detected and "✅ Anti-Speed" or "❌ No Anti-Speed", confidence)
-        
-        return result
+        print(string.format("🕵️ Hooked %d remotes/scripts", count))
+        return count
     end,
     
-    -- 2. ANTI-JUMP (chống nhảy cao)
-    DetectAntiJump = function()
-        local result = {detected = false, confidence = 0, details = ""}
-        local checks = 0
-        local found = 0
-        
-        -- Check remote jump
-        for _, child in pairs(ReplicatedStorage:GetChildren()) do
-            if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
-                local name = child.Name:lower()
-                if name:find("jump") or name:find("jumpheight") or name:find("gravity") then
-                    found = found + 1
-                end
+    -- Hook service
+    HookService = function(service)
+        local count = 0
+        for _, child in ipairs(service:GetChildren()) do
+            if child:IsA("RemoteEvent") then
+                SpyHooker:HookRemoteEvent(child)
+                count = count + 1
+            elseif child:IsA("RemoteFunction") then
+                SpyHooker:HookRemoteFunction(child)
+                count = count + 1
+            end
+            
+            -- Hook con cháu
+            if child:GetChildren() then
+                count = count + SpyHooker:HookService(child)
             end
         end
-        checks = checks + 1
-        
-        -- Check script
-        for _, script in pairs(Workspace:GetChildren()) do
-            if script:IsA("Script") or script:IsA("LocalScript") then
-                local src = script:FindFirstChild("Source") and script.Source.Value or ""
-                if type(src) == "string" then
-                    if src:find("JumpPower") or src:find("JumpHeight") or src:find("Gravity") then
-                        found = found + 1
-                        break
-                    end
-                end
-            end
-        end
-        checks = checks + 1
-        
-        -- Check Character
-        if Player.Character then
-            if Player.Character:FindFirstChild("JumpPower") or 
-               Player.Character:FindFirstChild("JumpHeight") then
-                found = found + 1
-            end
-        end
-        checks = checks + 1
-        
-        local confidence = math.min((found / checks) * 100, 100)
-        result.detected = confidence > 30
-        result.confidence = confidence
-        result.details = string.format("%s (confidence: %.1f%%)", 
-            result.detected and "✅ Anti-Jump" or "❌ No Anti-Jump", confidence)
-        
-        return result
+        return count
     end,
     
-    -- 3. ANTI-FLY (chống bay)
-    DetectAntiFly = function()
-        local result = {detected = false, confidence = 0, details = ""}
-        local checks = 0
-        local found = 0
+    -- Hook RemoteEvent
+    HookRemoteEvent = function(remote)
+        if SpyHooker.Hooked[remote] then return end
         
-        -- Check remote fly
-        for _, child in pairs(ReplicatedStorage:GetChildren()) do
-            if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
-                local name = child.Name:lower()
-                if name:find("fly") or name:find("flight") or name:find("flying") or 
-                   name:find("air") or name:find("hover") then
-                    found = found + 1
-                end
+        local original = remote.OnServerEvent
+        SpyHooker.OriginalFunctions[remote] = original
+        
+        remote.OnServerEvent = function(player, ...)
+            if SpyEngine.Enabled then
+                local args = {...}
+                SpyEngine:ProcessRemote(remote, args, "RemoteEvent")
             end
+            return original and original(player, ...)
         end
-        checks = checks + 1
         
-        -- Check script
-        for _, script in pairs(Workspace:GetChildren()) do
-            if script:IsA("Script") or script:IsA("LocalScript") then
-                local src = script:FindFirstChild("Source") and script.Source.Value or ""
-                if type(src) == "string" then
-                    if src:find("Fly") or src:find("Flight") or src:find("Flying") or 
-                       src:find("CanFly") or src:find("IsFlying") then
-                        found = found + 1
-                        break
-                    end
-                end
-            end
-        end
-        checks = checks + 1
-        
-        -- Check Humanoid properties
-        if Player.Character and Player.Character:FindFirstChild("Humanoid") then
-            local humanoid = Player.Character.Humanoid
-            if humanoid:FindFirstChild("Fly") or 
-               humanoid:FindFirstChild("CanFly") or
-               humanoid:FindFirstChild("IsFlying") then
-                found = found + 1
-            end
-        end
-        checks = checks + 1
-        
-        local confidence = math.min((found / checks) * 100, 100)
-        result.detected = confidence > 30
-        result.confidence = confidence
-        result.details = string.format("%s (confidence: %.1f%%)", 
-            result.detected and "✅ Anti-Fly" or "❌ No Anti-Fly", confidence)
-        
-        return result
+        SpyHooker.Hooked[remote] = true
     end,
     
-    -- 4. ANTI-NOCLIP (chống xuyên tường)
-    DetectAntiNoclip = function()
-        local result = {detected = false, confidence = 0, details = ""}
-        local checks = 0
-        local found = 0
+    -- Hook RemoteFunction
+    HookRemoteFunction = function(remote)
+        if SpyHooker.Hooked[remote] then return end
         
-        -- Check remote noclip
-        for _, child in pairs(ReplicatedStorage:GetChildren()) do
-            if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
-                local name = child.Name:lower()
-                if name:find("noclip") or name:find("nocli") or name:find("collision") or 
-                   name:find("clip") or name:find("wall") or name:find("phase") then
-                    found = found + 1
+        local original = remote.OnServerInvoke
+        SpyHooker.OriginalFunctions[remote] = original
+        
+        remote.OnServerInvoke = function(player, ...)
+            local args = {...}
+            local result = nil
+            
+            if SpyEngine.Enabled then
+                SpyEngine:ProcessRemote(remote, args, "RemoteFunction")
+                result = original and original(player, ...)
+                
+                -- Log return value nếu có
+                if result then
+                    SpyEngine:LogReturn(remote, result)
                 end
+            else
+                result = original and original(player, ...)
             end
+            
+            return result
         end
-        checks = checks + 1
         
-        -- Check script
-        for _, script in pairs(Workspace:GetChildren()) do
-            if script:IsA("Script") or script:IsA("LocalScript") then
-                local src = script:FindFirstChild("Source") and script.Source.Value or ""
-                if type(src) == "string" then
-                    if src:find("Noclip") or src:find("NoClip") or src:find("Collision") or 
-                       src:find("CanCollide") or src:find("Wall") then
-                        found = found + 1
-                        break
-                    end
-                end
-            end
-        end
-        checks = checks + 1
-        
-        local confidence = math.min((found / checks) * 100, 100)
-        result.detected = confidence > 30
-        result.confidence = confidence
-        result.details = string.format("%s (confidence: %.1f%%)", 
-            result.detected and "✅ Anti-Noclip" or "❌ No Anti-Noclip", confidence)
-        
-        return result
+        SpyHooker.Hooked[remote] = true
     end,
     
-    -- 5. ANTI-SPIN (chống xoay)
-    DetectAntiSpin = function()
-        local result = {detected = false, confidence = 0, details = ""}
-        local checks = 0
-        local found = 0
-        
-        -- Check remote spin
-        for _, child in pairs(ReplicatedStorage:GetChildren()) do
-            if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
-                local name = child.Name:lower()
-                if name:find("spin") or name:find("rotate") or name:find("rotation") or 
-                   name:find("angle") or name:find("look") or name:find("turn") then
-                    found = found + 1
-                end
-            end
-        end
-        checks = checks + 1
-        
-        -- Check script
+    -- Hook scripts để phát hiện anti-cheat
+    HookScripts = function()
         for _, script in pairs(Workspace:GetChildren()) do
             if script:IsA("Script") or script:IsA("LocalScript") then
-                local src = script:FindFirstChild("Source") and script.Source.Value or ""
-                if type(src) == "string" then
-                    if src:find("Spin") or src:find("Rotate") or src:find("Rotation") or 
-                       src:find("Angle") or src:find("TurnSpeed") then
-                        found = found + 1
-                        break
-                    end
-                end
+                SpyHooker.AnalyzeScript(script)
             end
         end
-        checks = checks + 1
-        
-        local confidence = math.min((found / checks) * 100, 100)
-        result.detected = confidence > 30
-        result.confidence = confidence
-        result.details = string.format("%s (confidence: %.1f%%)", 
-            result.detected and "✅ Anti-Spin" or "❌ No Anti-Spin", confidence)
-        
-        return result
     end,
     
-    -- 6. ANTI-TELEPORT (chống dịch chuyển)
-    DetectAntiTeleport = function()
-        local result = {detected = false, confidence = 0, details = ""}
-        local checks = 0
-        local found = 0
+    -- Analyze script tìm anti-cheat
+    AnalyzeScript = function(script)
+        local src = script:FindFirstChild("Source") and script.Source.Value or ""
+        if type(src) ~= "string" then return end
         
-        -- Check remote teleport
-        for _, child in pairs(ReplicatedStorage:GetChildren()) do
-            if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
-                local name = child.Name:lower()
-                if name:find("teleport") or name:find("tele") or name:find("tp") or 
-                   name:find("warp") or name:find("move") or name:find("position") then
-                    found = found + 1
-                end
+        -- Tìm pattern anti-cheat
+        for keyword, _ in pairs(BanPatterns.DangerousKeywords) do
+            if src:find(keyword) then
+                SpyEngine:RegisterSuspiciousScript(script, keyword)
+                break
             end
         end
-        checks = checks + 1
-        
-        -- Check script
-        for _, script in pairs(Workspace:GetChildren()) do
-            if script:IsA("Script") or script:IsA("LocalScript") then
-                local src = script:FindFirstChild("Source") and script.Source.Value or ""
-                if type(src) == "string" then
-                    if src:find("Teleport") or src:find("Tele") or src:find("Warp") or 
-                       src:find("TP") or src:find("Position") then
-                        found = found + 1
-                        break
-                    end
-                end
-            end
-        end
-        checks = checks + 1
-        
-        local confidence = math.min((found / checks) * 100, 100)
-        result.detected = confidence > 30
-        result.confidence = confidence
-        result.details = string.format("%s (confidence: %.1f%%)", 
-            result.detected and "✅ Anti-Teleport" or "❌ No Anti-Teleport", confidence)
-        
-        return result
     end,
+}
+
+-- ============ SPY ENGINE PROCESS ============
+function SpyEngine:ProcessRemote(remote, args, type)
+    if self.BlockedRemotes[remote] then 
+        print(string.format("🛑 Blocked: %s", remote.Name))
+        return 
+    end
     
-    -- 7. ANTI-GODMODE (chống bất tử)
-    DetectAntiGodMode = function()
-        local result = {detected = false, confidence = 0, details = ""}
-        local checks = 0
-        local found = 0
-        
-        -- Check remote godmode
-        for _, child in pairs(ReplicatedStorage:GetChildren()) do
-            if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
-                local name = child.Name:lower()
-                if name:find("god") or name:find("invincible") or name:find("immortal") or 
-                   name:find("health") or name:find("damage") or name:find("hurt") then
-                    found = found + 1
-                end
-            end
-        end
-        checks = checks + 1
-        
-        -- Check script
-        for _, script in pairs(Workspace:GetChildren()) do
-            if script:IsA("Script") or script:IsA("LocalScript") then
-                local src = script:FindFirstChild("Source") and script.Source.Value or ""
-                if type(src) == "string" then
-                    if src:find("God") or src:find("Invincible") or src:find("Immortal") or 
-                       src:find("Health") or src:find("Damage") or src:find("Hurt") then
-                        found = found + 1
-                        break
-                    end
-                end
-            end
-        end
-        checks = checks + 1
-        
-        local confidence = math.min((found / checks) * 100, 100)
-        result.detected = confidence > 30
-        result.confidence = confidence
-        result.details = string.format("%s (confidence: %.1f%%)", 
-            result.detected and "✅ Anti-GodMode" or "❌ No Anti-GodMode", confidence)
-        
-        return result
-    end,
+    -- Log remote
+    self:LogRemote(remote, args, type)
+    self.Stats.TotalRemotes = self.Stats.TotalRemotes + 1
     
-    -- 8. ANTI-SILENT AIM (chống tự động ngắm)
-    DetectAntiSilentAim = function()
-        local result = {detected = false, confidence = 0, details = ""}
-        local checks = 0
-        local found = 0
-        
-        -- Check remote aim
-        for _, child in pairs(ReplicatedStorage:GetChildren()) do
-            if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
-                local name = child.Name:lower()
-                if name:find("aim") or name:find("target") or name:find("lock") or 
-                   name:find("shoot") or name:find("bullet") or name:find("fire") then
-                    found = found + 1
-                end
-            end
-        end
-        checks = checks + 1
-        
-        -- Check script
-        for _, script in pairs(Workspace:GetChildren()) do
-            if script:IsA("Script") or script:IsA("LocalScript") then
-                local src = script:FindFirstChild("Source") and script.Source.Value or ""
-                if type(src) == "string" then
-                    if src:find("Aim") or src:find("Target") or src:find("Lock") or 
-                       src:find("Shoot") or src:find("Bullet") or src:find("Fire") then
-                        found = found + 1
-                        break
-                    end
-                end
-            end
-        end
-        checks = checks + 1
-        
-        local confidence = math.min((found / checks) * 100, 100)
-        result.detected = confidence > 30
-        result.confidence = confidence
-        result.details = string.format("%s (confidence: %.1f%%)", 
-            result.detected and "✅ Anti-SilentAim" or "❌ No Anti-SilentAim", confidence)
-        
-        return result
-    end,
+    -- Check ban patterns
+    local isBan, pattern = self:CheckBanPattern(remote, args)
+    if isBan then
+        self:HandleBanAttempt(remote, args, pattern)
+        return
+    end
     
-    -- 9. ANTI-SPEEDHACK (chống tăng tốc)
-    DetectAntiSpeedHack = function()
-        local result = {detected = false, confidence = 0, details = ""}
-        local checks = 0
-        local found = 0
-        
-        -- Check remote speedhack
-        for _, child in pairs(ReplicatedStorage:GetChildren()) do
-            if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
-                local name = child.Name:lower()
-                if name:find("speedhack") or name:find("hack") or name:find("cheat") or 
-                   name:find("detect") or name:find("anti") then
-                    found = found + 1
-                end
-            end
-        end
-        checks = checks + 1
-        
-        -- Check script
-        for _, script in pairs(Workspace:GetChildren()) do
-            if script:IsA("Script") or script:IsA("LocalScript") then
-                local src = script:FindFirstChild("Source") and script.Source.Value or ""
-                if type(src) == "string" then
-                    if src:find("SpeedHack") or src:find("AntiCheat") or src:find("Detect") then
-                        found = found + 1
-                        break
-                    end
-                end
-            end
-        end
-        checks = checks + 1
-        
-        local confidence = math.min((found / checks) * 100, 100)
-        result.detected = confidence > 30
-        result.confidence = confidence
-        result.details = string.format("%s (confidence: %.1f%%)", 
-            result.detected and "✅ Anti-SpeedHack" or "❌ No Anti-SpeedHack", confidence)
-        
-        return result
-    end,
+    -- Check suspicious patterns
+    local isSuspicious, keyword = self:CheckSuspicious(remote, args)
+    if isSuspicious then
+        self:HandleSuspicious(remote, args, keyword)
+    end
     
-    -- 10. ANTI-CLICK TELEPORT (chống teleport click)
-    DetectAntiClickTeleport = function()
-        local result = {detected = false, confidence = 0, details = ""}
-        local checks = 0
-        local found = 0
-        
-        -- Check remote click teleport
-        for _, child in pairs(ReplicatedStorage:GetChildren()) do
-            if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
-                local name = child.Name:lower()
-                if name:find("click") or name:find("mouse") or name:find("teleport") or 
-                   name:find("move") or name:find("goto") or name:find("walkto") then
-                    found = found + 1
-                end
-            end
-        end
-        checks = checks + 1
-        
-        -- Check script
-        for _, script in pairs(Workspace:GetChildren()) do
-            if script:IsA("Script") or script:IsA("LocalScript") then
-                local src = script:FindFirstChild("Source") and script.Source.Value or ""
-                if type(src) == "string" then
-                    if src:find("Click") or src:find("Mouse") or src:find("Goto") or 
-                       src:find("WalkTo") then
-                        found = found + 1
-                        break
-                    end
-                end
-            end
-        end
-        checks = checks + 1
-        
-        local confidence = math.min((found / checks) * 100, 100)
-        result.detected = confidence > 30
-        result.confidence = confidence
-        result.details = string.format("%s (confidence: %.1f%%)", 
-            result.detected and "✅ Anti-ClickTeleport" or "❌ No Anti-ClickTeleport", confidence)
-        
-        return result
-    end,
+    -- Auto block if needed
+    if self.ProtectionLevel == "Ultra" and self:IsDangerous(remote, args) then
+        self:BlockRemote(remote)
+        self:Notify("🛡️ Auto-blocked: " .. remote.Name)
+    end
+end
+
+-- ============ BAN PATTERN CHECK ============
+function SpyEngine:CheckBanPattern(remote, args)
+    local remoteName = remote.Name
+    local argsStr = tostring(args)
     
-    -- ============ FULL SCAN ============
+    -- Check tên remote
+    for _, pattern in ipairs(BanPatterns.BanCommands) do
+        if remoteName:find(pattern) then
+            return true, pattern
+        end
+    end
+    
+    -- Check args
+    for _, arg in ipairs(args) do
+        if type(arg) == "string" then
+            for _, pattern in ipairs(BanPatterns.BanCommands) do
+                if arg:find(pattern) then
+                    return true, pattern
+                end
+            end
+        end
+    end
+    
+    -- Check args string
+    for _, pattern in ipairs(BanPatterns.DangerousKeywords) do
+        if argsStr:find(pattern) then
+            return true, pattern
+        end
+    end
+    
+    return false, nil
+end
+
+-- ============ SUSPICIOUS CHECK ============
+function SpyEngine:CheckSuspicious(remote, args)
+    local remoteName = remote.Name
+    local argsStr = tostring(args)
+    
+    for _, keyword in ipairs(BanPatterns.DangerousKeywords) do
+        if remoteName:find(keyword) or argsStr:find(keyword) then
+            return true, keyword
+        end
+    end
+    
+    return false, nil
+end
+
+-- ============ IS DANGEROUS ============
+function SpyEngine:IsDangerous(remote, args)
+    local remoteName = remote.Name
+    local argsStr = tostring(args)
+    
+    -- Check dangerous remotes
+    for _, pattern in ipairs(BanPatterns.DangerousRemotes) do
+        if remoteName:find(pattern) then
+            return true
+        end
+    end
+    
+    -- Check args for ban patterns
+    for _, pattern in ipairs(BanPatterns.BanCommands) do
+        if argsStr:find(pattern) then
+            return true
+        end
+    end
+    
+    return false
+end
+
+-- ============ HANDLE BAN ATTEMPT ============
+function SpyEngine:HandleBanAttempt(remote, args, pattern)
+    self.BanDetected = true
+    self.BanCount = self.BanCount + 1
+    self.LastBanAttempt = os.time()
+    self.Stats.BanAttempts = self.Stats.BanAttempts + 1
+    
+    -- Block remote ngay lập tức
+    self:BlockRemote(remote)
+    
+    -- Log ban attempt
+    local logEntry = {
+        Remote = remote,
+        Pattern = pattern,
+        Args = args,
+        Timestamp = os.time(),
+        Formatted = string.format("🚨 BAN ATTEMPT! Remote: %s | Pattern: %s", 
+            remote.Name, pattern),
+    }
+    table.insert(self.RemoteLogs, 1, logEntry)
+    
+    -- Hiển thị cảnh báo
+    self:ShowBanAlert(remote, pattern)
+    
+    -- Tăng protection level
+    if self.BanCount >= 3 then
+        self.ProtectionLevel = "Ultra"
+        self:Notify("🛡️ Protection level increased to ULTRA!")
+    elseif self.BanCount >= 1 then
+        self.ProtectionLevel = "High"
+        self:Notify("🛡️ Protection level increased to HIGH!")
+    end
+    
+    print(string.format("🚨 BAN ATTEMPT DETECTED! Remote: %s | Pattern: %s", 
+        remote.Name, pattern))
+end
+
+-- ============ HANDLE SUSPICIOUS ============
+function SpyEngine:HandleSuspicious(remote, args, keyword)
+    self.Stats.SuspiciousCount = self.Stats.SuspiciousCount + 1
+    
+    if not self.SuspiciousRemotes[remote] then
+        self.SuspiciousRemotes[remote] = {
+            keyword = keyword,
+            count = 0,
+            firstSeen = os.time(),
+        }
+    end
+    
+    self.SuspiciousRemotes[remote].count = self.SuspiciousRemotes[remote].count + 1
+    
+    -- Nếu suspicious quá nhiều -> block
+    if self.SuspiciousRemotes[remote].count >= 3 and self.ProtectionLevel == "Ultra" then
+        self:BlockRemote(remote)
+        self:Notify("🛡️ Auto-blocked suspicious remote: " .. remote.Name)
+    end
+end
+
+-- ============ BLOCK REMOTE ============
+function SpyEngine:BlockRemote(remote)
+    if self.BlockedRemotes[remote] then return end
+    
+    self.BlockedRemotes[remote] = true
+    self.Stats.BlockedCount = self.Stats.BlockedCount + 1
+    
+    -- Unhook remote
+    SpyHooker.OriginalFunctions[remote] = nil
+    SpyHooker.Hooked[remote] = nil
+    
+    -- Log
+    local logEntry = {
+        Remote = remote,
+        Timestamp = os.time(),
+        Formatted = string.format("🛑 Blocked: %s", remote.Name),
+    }
+    table.insert(self.RemoteLogs, 1, logEntry)
+    
+    print(string.format("🛑 Blocked remote: %s", remote.Name))
+end
+
+-- ============ UNBLOCK REMOTE ============
+function SpyEngine:UnblockRemote(remote)
+    if not self.BlockedRemotes[remote] then return end
+    
+    self.BlockedRemotes[remote] = nil
+    SpyHooker:HookRemoteEvent(remote)
+    
+    print(string.format("🔓 Unblocked remote: %s", remote.Name))
+end
+
+-- ============ LOG REMOTE ============
+function SpyEngine:LogRemote(remote, args, type)
+    local logEntry = {
+        Remote = remote,
+        Args = args,
+        Type = type,
+        Timestamp = os.time(),
+        Formatted = string.format("[%s] %s | Args: %s", 
+            os.date("%H:%M:%S"),
+            remote.Name,
+            #args > 0 and tostring(args):sub(1, 50) or "{}"
+        ),
+    }
+    table.insert(self.RemoteLogs, 1, logEntry)
+    
+    -- Giới hạn log
+    if #self.RemoteLogs > 500 then
+        for i = 500, #self.RemoteLogs do
+            table.remove(self.RemoteLogs, i)
+        end
+    end
+end
+
+-- ============ LOG RETURN ============
+function SpyEngine:LogReturn(remote, result)
+    local logEntry = {
+        Remote = remote,
+        Args = {result},
+        Type = "Return",
+        Timestamp = os.time(),
+        Formatted = string.format("[%s] %s | Return: %s",
+            os.date("%H:%M:%S"),
+            remote.Name,
+            tostring(result):sub(1, 50)
+        ),
+    }
+    table.insert(self.RemoteLogs, 1, logEntry)
+end
+
+-- ============ BAN ALERT ============
+function SpyEngine:ShowBanAlert(remote, pattern)
+    local alert = Instance.new("Frame")
+    alert.Size = UDim2.new(0, 400, 0, 80)
+    alert.Position = UDim2.new(0.5, -200, 0.3, 0)
+    alert.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    alert.BackgroundTransparency = 0.2
+    alert.BorderSizePixel = 2
+    alert.BorderColor3 = Color3.fromRGB(255, 0, 0)
+    alert.Parent = CoreGui
+    
+    -- Blink animation
+    local blink = TweenService:Create(alert, TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true), {
+        BackgroundTransparency = 0.1,
+    })
+    blink:Play()
+    
+    -- Icon
+    local icon = Instance.new("TextLabel")
+    icon.Size = UDim2.new(0, 50, 1, 0)
+    icon.Text = "🚨"
+    icon.TextColor3 = Color3.fromRGB(255, 255, 255)
+    icon.TextSize = 40
+    icon.Font = Enum.Font.GothamBold
+    icon.BackgroundTransparency = 1
+    icon.Parent = alert
+    
+    -- Text
+    local text = Instance.new("TextLabel")
+    text.Size = UDim2.new(1, -60, 1, 0)
+    text.Position = UDim2.new(0, 55, 0, 0)
+    text.Text = string.format("🚨 BAN ATTEMPT BLOCKED!\nRemote: %s | Pattern: %s", 
+        remote.Name, pattern)
+    text.TextColor3 = Color3.fromRGB(255, 255, 255)
+    text.TextSize = 14
+    text.Font = Enum.Font.GothamBold
+    text.TextWrapped = true
+    text.TextXAlignment = Enum.TextXAlignment.Left
+    text.BackgroundTransparency = 1
+    text.Parent = alert
+    
+    -- Auto remove
+    task.wait(4)
+    TweenService:Create(alert, TweenInfo.new(0.3), {
+        BackgroundTransparency = 1,
+    }):Play()
+    task.wait(0.3)
+    alert:Destroy()
+end
+
+-- ============ NOTIFICATION ============
+function SpyEngine:Notify(message)
+    local notif = Instance.new("Frame")
+    notif.Size = UDim2.new(0, 300, 0, 40)
+    notif.Position = UDim2.new(0.5, -150, 0.8, 0)
+    notif.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
+    notif.BackgroundTransparency = 0.2
+    notif.BorderSizePixel = 0
+    notif.Parent = CoreGui
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -20, 1, 0)
+    label.Position = UDim2.new(0, 10, 0, 0)
+    label.Text = message
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 14
+    label.Font = Enum.Font.Gotham
+    label.BackgroundTransparency = 1
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = notif
+    
+    -- Animation
+    TweenService:Create(notif, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+        Position = UDim2.new(0.5, -150, 0.75, 0),
+    }):Play()
+    
+    task.wait(3)
+    TweenService:Create(notif, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+        Position = UDim2.new(0.5, -150, 0.8, 0),
+    }):Play()
+    task.wait(0.3)
+    notif:Destroy()
+end
+
+-- ============ ANTI-HACK DETECTOR (KẾT HỢP V7.3) ============
+local AntiHackDetector = {
+    DetectionResult = {},
+    
     FullScan = function()
         print("🔄 Scanning anti-hack systems...")
         
-        local result = AntiHackDetector.DetectionResult
-        result.GameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name or "Unknown"
-        
-        -- Run all detections
-        result.AntiSpeed = AntiHackDetector:DetectAntiSpeed()
-        result.AntiJump = AntiHackDetector:DetectAntiJump()
-        result.AntiFly = AntiHackDetector:DetectAntiFly()
-        result.AntiNoclip = AntiHackDetector:DetectAntiNoclip()
-        result.AntiSpin = AntiHackDetector:DetectAntiSpin()
-        result.AntiTeleport = AntiHackDetector:DetectAntiTeleport()
-        result.AntiGodMode = AntiHackDetector:DetectAntiGodMode()
-        result.AntiSilentAim = AntiHackDetector:DetectAntiSilentAim()
-        result.AntiSpeedHack = AntiHackDetector:DetectAntiSpeedHack()
-        result.AntiClickTeleport = AntiHackDetector:DetectAntiClickTeleport()
-        
-        -- Calculate total security score
-        local totalScore = 0
-        local count = 0
-        
-        local detections = {
-            result.AntiSpeed,
-            result.AntiJump,
-            result.AntiFly,
-            result.AntiNoclip,
-            result.AntiSpin,
-            result.AntiTeleport,
-            result.AntiGodMode,
-            result.AntiSilentAim,
-            result.AntiSpeedHack,
-            result.AntiClickTeleport,
+        local result = {
+            GameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name or "Unknown",
+            SecurityScore = 0,
+            AntiCheatType = "Unknown",
+            RiskLevel = "Unknown",
+            AntiSpeed = {detected = false, confidence = 0},
+            AntiJump = {detected = false, confidence = 0},
+            AntiFly = {detected = false, confidence = 0},
+            AntiNoclip = {detected = false, confidence = 0},
+            AntiSpin = {detected = false, confidence = 0},
+            AntiTeleport = {detected = false, confidence = 0},
+            AntiGodMode = {detected = false, confidence = 0},
+            AntiSilentAim = {detected = false, confidence = 0},
+            AntiSpeedHack = {detected = false, confidence = 0},
+            AntiClickTeleport = {detected = false, confidence = 0},
         }
         
-        for _, detection in ipairs(detections) do
-            if detection.detected then
-                totalScore = totalScore + detection.confidence
-            else
-                totalScore = totalScore + (100 - detection.confidence) * 0.3
-            end
-            count = count + 1
+        -- Scan với SpyEngine
+        local detectedAntiCheat = {}
+        for remote, _ in pairs(SpyEngine.BlockedRemotes) do
+            table.insert(detectedAntiCheat, remote.Name)
         end
         
-        result.SecurityScore = math.floor(totalScore / count)
+        if #detectedAntiCheat > 0 then
+            result.AntiCheatType = "Detected: " .. table.concat(detectedAntiCheat, ", ")
+        end
         
-        -- Risk level
-        if result.SecurityScore >= 80 then
-            result.RiskLevel = "🔴 HIGH - Strong anti-hack"
-        elseif result.SecurityScore >= 60 then
-            result.RiskLevel = "🟡 MEDIUM - Moderate protection"
-        elseif result.SecurityScore >= 40 then
-            result.RiskLevel = "🟢 LOW - Weak protection"
+        -- Tính điểm dựa trên số lượng remote bị block
+        local blockCount = SpyEngine.Stats.BlockedCount
+        local totalRemotes = SpyEngine.Stats.TotalRemotes
+        
+        if totalRemotes > 0 then
+            local blockRatio = blockCount / totalRemotes
+            result.SecurityScore = math.floor(blockRatio * 100)
+        end
+        
+        -- Risk level từ SpyEngine
+        if SpyEngine.ProtectionLevel == "Ultra" then
+            result.RiskLevel = "🔴 HIGH - Ultra Protection Active"
+        elseif SpyEngine.ProtectionLevel == "High" then
+            result.RiskLevel = "🟡 MEDIUM - High Protection Active"
         else
-            result.RiskLevel = "✅ VERY LOW - Almost no protection"
+            result.RiskLevel = "🟢 LOW - Normal Protection"
         end
         
-        -- Detect general anti-cheat
-        result.AntiCheatType = AntiHackDetector:DetectAntiCheatType()
-        
-        -- Generate recommendations
-        result.Recommendations = AntiHackDetector:GenerateRecommendations(result)
-        
-        -- Executor compatibility
-        result.ExecutorCompat = AntiHackDetector:CheckExecutorCompatibility(result.SecurityScore)
-        
-        print("✅ Scan complete!")
+        AntiHackDetector.DetectionResult = result
         return result
     end,
-    
-    -- ============ DETECT ANTI-CHEAT TYPE ============
-    DetectAntiCheatType = function()
-        local patterns = {
-            Byfron = {"Byfron", "Hyperion", "AntiTamper", "RobloxSecurity"},
-            EasyAntiCheat = {"EAC", "EasyAntiCheat", "AntiCheatClient"},
-            BattlEye = {"BattlEye", "BE_Server", "AntiCheatService"},
-            RobloxBuiltIn = {"RobloxSecurity", "CoreSecurity", "ProtectedCall"},
-            Custom = {"AntiCheat", "AntiHack", "SecurityCheck", "Watchdog"},
-        }
-        
-        local detected = {}
-        for name, patternList in pairs(patterns) do
-            for _, pattern in ipairs(patternList) do
-                if ReplicatedStorage:FindFirstChild(pattern) or 
-                   game:GetService("Lighting"):FindFirstChild(pattern) or
-                   CoreGui:FindFirstChild(pattern) then
-                    table.insert(detected, name)
-                    break
-                end
-            end
-        end
-        
-        return #detected > 0 and table.concat(detected, " + ") or "Unknown / None"
-    end,
-    
-    -- ============ GENERATE RECOMMENDATIONS ============
-    GenerateRecommendations = function(result)
-        local recs = {}
-        
-        if result.AntiSpeed.detected and result.AntiSpeed.confidence > 70 then
-            table.insert(recs, "⚠️ Anti-Speed is strong - avoid speed hacks")
-        end
-        
-        if result.AntiJump.detected and result.AntiJump.confidence > 70 then
-            table.insert(recs, "⚠️ Anti-Jump is strong - avoid jump hacks")
-        end
-        
-        if result.AntiFly.detected and result.AntiFly.confidence > 70 then
-            table.insert(recs, "⚠️ Anti-Fly is strong - avoid fly hacks")
-        end
-        
-        if result.AntiNoclip.detected and result.AntiNoclip.confidence > 70 then
-            table.insert(recs, "⚠️ Anti-Noclip is strong - avoid wall hacks")
-        end
-        
-        if result.SecurityScore >= 80 then
-            table.insert(recs, "🔴 High security - use only Synapse X or ScriptWare")
-            table.insert(recs, "❌ Avoid free executors - high ban risk")
-        elseif result.SecurityScore >= 60 then
-            table.insert(recs, "🟡 Medium security - Krnl/Fluxus may work with caution")
-            table.insert(recs, "✅ Synapse recommended for safety")
-        else
-            table.insert(recs, "🟢 Low security - most executors are compatible")
-            table.insert(recs, "✅ Safe to use any executor")
-        end
-        
-        return recs
-    end,
-    
-    -- ============ CHECK EXECUTOR COMPATIBILITY ============
-    CheckExecutorCompatibility = function(score)
-        local compat = {}
-        
-        if score >= 80 then
-            compat = {
-                Synapse = {status = "🟡 Usable - High risk", score = 70},
-                ScriptWare = {status = "🟡 Usable - High risk", score = 65},
-                Krnl = {status = "🔴 Risky - Avoid", score = 25},
-                Fluxus = {status = "🔴 Risky - Avoid", score = 20},
-                Delta = {status = "🔴 Risky - Avoid", score = 15},
-                Arceus = {status = "🔴 Risky - Avoid", score = 10},
-            }
-        elseif score >= 60 then
-            compat = {
-                Synapse = {status = "🟢 Good", score = 85},
-                ScriptWare = {status = "🟢 Good", score = 80},
-                Krnl = {status = "🟡 Moderate", score = 65},
-                Fluxus = {status = "🟡 Moderate", score = 55},
-                Delta = {status = "🟡 Moderate", score = 45},
-                Arceus = {status = "🟡 Moderate", score = 40},
-            }
-        elseif score >= 40 then
-            compat = {
-                Synapse = {status = "🟢 Excellent", score = 95},
-                ScriptWare = {status = "🟢 Excellent", score = 90},
-                Krnl = {status = "🟢 Good", score = 85},
-                Fluxus = {status = "🟢 Good", score = 80},
-                Delta = {status = "🟢 Good", score = 75},
-                Arceus = {status = "🟢 Good", score = 70},
-            }
-        else
-            compat = {
-                Synapse = {status = "🟢 Perfect", score = 100},
-                ScriptWare = {status = "🟢 Perfect", score = 100},
-                Krnl = {status = "🟢 Perfect", score = 95},
-                Fluxus = {status = "🟢 Perfect", score = 95},
-                Delta = {status = "🟢 Perfect", score = 90},
-                Arceus = {status = "🟢 Perfect", score = 85},
-            }
-        end
-        
-        return compat
-    end,
 }
 
--- ============ BADGE NOTIFICATION ============
-local BadgeNotification = {
-    Queue = {},
-    IsShowing = false,
-    
-    CreateNotification = function(title, description, icon, color, duration)
-        local notif = Instance.new("Frame")
-        notif.Size = UDim2.new(0, 550, 0, 180)
-        notif.Position = UDim2.new(0.5, -275, 0.5, 200)
-        notif.BackgroundColor3 = Color3.fromRGB(15, 15, 30)
-        notif.BackgroundTransparency = 0.1
-        notif.BorderSizePixel = 0
-        notif.ClipsDescendants = true
-        notif.Parent = CoreGui
-        
-        -- Shadow
-        local shadow = Instance.new("ImageLabel")
-        shadow.Size = UDim2.new(1, 40, 1, 40)
-        shadow.Position = UDim2.new(0, -20, 0, -20)
-        shadow.BackgroundTransparency = 1
-        shadow.Image = "rbxassetid://1316043460"
-        shadow.ImageTransparency = 0.8
-        shadow.ScaleType = Enum.ScaleType.Slice
-        shadow.SliceCenter = Rect.new(10, 10, 10, 10)
-        shadow.Parent = notif
-        
-        -- Icon
-        local iconFrame = Instance.new("Frame")
-        iconFrame.Size = UDim2.new(0, 70, 0, 70)
-        iconFrame.Position = UDim2.new(0, 15, 0.5, -35)
-        iconFrame.BackgroundColor3 = color or Color3.fromRGB(0, 150, 255)
-        iconFrame.BackgroundTransparency = 0.2
-        iconFrame.BorderSizePixel = 2
-        iconFrame.BorderColor3 = Color3.fromRGB(255, 255, 255)
-        iconFrame.Parent = notif
-        
-        local iconText = Instance.new("TextLabel")
-        iconText.Size = UDim2.new(1, 0, 1, 0)
-        iconText.Text = icon or "🏆"
-        iconText.TextColor3 = Color3.fromRGB(255, 255, 255)
-        iconText.TextSize = 45
-        iconText.Font = Enum.Font.GothamBold
-        iconText.BackgroundTransparency = 1
-        iconText.Parent = iconFrame
-        
-        -- Title
-        local titleLabel = Instance.new("TextLabel")
-        titleLabel.Size = UDim2.new(1, -100, 0, 35)
-        titleLabel.Position = UDim2.new(0, 95, 0, 15)
-        titleLabel.Text = title or "🏅 Badge Unlocked!"
-        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        titleLabel.TextSize = 18
-        titleLabel.Font = Enum.Font.GothamBold
-        titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-        titleLabel.BackgroundTransparency = 1
-        titleLabel.Parent = notif
-        
-        -- Description
-        local descLabel = Instance.new("TextLabel")
-        descLabel.Size = UDim2.new(1, -100, 0, 80)
-        descLabel.Position = UDim2.new(0, 95, 0, 50)
-        descLabel.Text = description or "You've earned this badge!"
-        descLabel.TextColor3 = Color3.fromRGB(180, 180, 230)
-        descLabel.TextSize = 13
-        descLabel.Font = Enum.Font.Gotham
-        descLabel.TextXAlignment = Enum.TextXAlignment.Left
-        descLabel.TextWrapped = true
-        descLabel.BackgroundTransparency = 1
-        descLabel.Parent = notif
-        
-        -- Progress bar
-        local progressBar = Instance.new("Frame")
-        progressBar.Size = UDim2.new(1, 0, 0, 4)
-        progressBar.Position = UDim2.new(0, 0, 1, -4)
-        progressBar.BackgroundColor3 = color or Color3.fromRGB(0, 150, 255)
-        progressBar.BackgroundTransparency = 0.3
-        progressBar.BorderSizePixel = 0
-        progressBar.Parent = notif
-        
-        local progressFill = Instance.new("Frame")
-        progressFill.Size = UDim2.new(0, 0, 1, 0)
-        progressFill.BackgroundColor3 = color or Color3.fromRGB(0, 200, 255)
-        progressFill.BorderSizePixel = 0
-        progressFill.Parent = progressBar
-        
-        -- Animation IN
-        notif.Position = UDim2.new(0.5, -275, 0.5, 300)
-        notif.BackgroundTransparency = 1
-        
-        TweenService:Create(notif, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-            Position = UDim2.new(0.5, -275, 0.5, 200),
-            BackgroundTransparency = 0.1,
-        }):Play()
-        
-        TweenService:Create(progressFill, TweenInfo.new(duration or 4, Enum.EasingStyle.Linear), {
-            Size = UDim2.new(1, 0, 1, 0),
-        }):Play()
-        
-        task.wait(duration or 4)
-        
-        TweenService:Create(notif, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-            Position = UDim2.new(0.5, -275, 0.5, 300),
-            BackgroundTransparency = 1,
-        }):Play()
-        
-        task.wait(0.3)
-        notif:Destroy()
-    end,
-    
-    Show = function(title, description, icon, color, duration)
-        table.insert(BadgeNotification.Queue, {
-            title = title,
-            description = description,
-            icon = icon,
-            color = color,
-            duration = duration,
-        })
-        
-        if not BadgeNotification.IsShowing then
-            BadgeNotification:ProcessQueue()
-        end
-    end,
-    
-    ProcessQueue = function()
-        if #BadgeNotification.Queue == 0 then
-            BadgeNotification.IsShowing = false
-            return
-        end
-        
-        BadgeNotification.IsShowing = true
-        local notif = table.remove(BadgeNotification.Queue, 1)
-        BadgeNotification.CreateNotification(
-            notif.title,
-            notif.description,
-            notif.icon,
-            notif.color,
-            notif.duration
-        )
-        task.wait((notif.duration or 4) + 0.5)
-        BadgeNotification:ProcessQueue()
-    end,
-}
-
--- ============ UI WITH BUTTONS ============
+-- ============ UI ============
 local AssessmentUI = {
     ScreenGui = nil,
     IsOpen = false,
@@ -831,13 +561,13 @@ local AssessmentUI = {
         end
         
         AssessmentUI.ScreenGui = Instance.new("ScreenGui")
-        AssessmentUI.ScreenGui.Name = "AntiHackAssessmentUI"
+        AssessmentUI.ScreenGui.Name = "SpyV74UI"
         AssessmentUI.ScreenGui.Parent = CoreGui
         AssessmentUI.ScreenGui.ResetOnSpawn = false
         
         local frame = Instance.new("Frame")
-        frame.Size = UDim2.new(0, 500, 0, 650)
-        frame.Position = UDim2.new(0.5, -250, 0.5, -325)
+        frame.Size = UDim2.new(0, 550, 0, 700)
+        frame.Position = UDim2.new(0.5, -275, 0.5, -350)
         frame.BackgroundColor3 = Color3.fromRGB(15, 15, 35)
         frame.BackgroundTransparency = 0.05
         frame.BorderSizePixel = 0
@@ -847,16 +577,16 @@ local AssessmentUI = {
         
         -- Title
         local titleBar = Instance.new("Frame")
-        titleBar.Size = UDim2.new(1, 0, 0, 45)
+        titleBar.Size = UDim2.new(1, 0, 0, 50)
         titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 60)
         titleBar.BorderSizePixel = 0
         titleBar.Parent = frame
         
         local title = Instance.new("TextLabel")
         title.Size = UDim2.new(1, -40, 1, 0)
-        title.Text = "🛡️ Anti-Hack Assessment PRO"
+        title.Text = "🕵️ Spy V7.4 - Anti-Hack & Ban Protection"
         title.TextColor3 = Color3.fromRGB(255, 255, 255)
-        title.TextSize = 18
+        title.TextSize = 17
         title.TextXAlignment = Enum.TextXAlignment.Left
         title.Font = Enum.Font.GothamBold
         title.BackgroundTransparency = 1
@@ -864,7 +594,7 @@ local AssessmentUI = {
         
         local closeBtn = Instance.new("TextButton")
         closeBtn.Size = UDim2.new(0, 30, 0, 30)
-        closeBtn.Position = UDim2.new(1, -35, 0, 8)
+        closeBtn.Position = UDim2.new(1, -35, 0, 10)
         closeBtn.Text = "✕"
         closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         closeBtn.TextSize = 16
@@ -877,21 +607,22 @@ local AssessmentUI = {
         end)
         
         -- Buttons
-        local btnY = 55
-        local btnHeight = 38
+        local btnY = 60
+        local btnHeight = 35
         local btnGap = 5
         
         local buttons = {
-            {text = "🔍 SCAN ANTI-HACK", color = Color3.fromRGB(0, 150, 255), hover = Color3.fromRGB(0, 100, 200)},
-            {text = "⚠️ CHECK EXPLOITS", color = Color3.fromRGB(255, 100, 0), hover = Color3.fromRGB(200, 80, 0)},
-            {text = "💻 EXECUTOR CHECK", color = Color3.fromRGB(150, 50, 255), hover = Color3.fromRGB(100, 0, 200)},
-            {text = "📊 SHOW SCORE", color = Color3.fromRGB(0, 200, 100), hover = Color3.fromRGB(0, 150, 50)},
+            {text = "🕵️ START SPY", color = Color3.fromRGB(0, 150, 255), hover = Color3.fromRGB(0, 100, 200)},
+            {text = "🛑 STOP SPY", color = Color3.fromRGB(255, 50, 50), hover = Color3.fromRGB(200, 0, 0)},
+            {text = "🔍 SCAN ANTI-HACK", color = Color3.fromRGB(0, 200, 100), hover = Color3.fromRGB(0, 150, 50)},
+            {text = "📊 SHOW STATUS", color = Color3.fromRGB(255, 150, 0), hover = Color3.fromRGB(200, 100, 0)},
+            {text = "🗑️ CLEAR LOGS", color = Color3.fromRGB(150, 50, 255), hover = Color3.fromRGB(100, 0, 200)},
         }
         
         for i, btnData in ipairs(buttons) do
             local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(0, 220, 0, btnHeight)
-            btn.Position = UDim2.new(0.5, -110, 0, btnY + (i-1) * (btnHeight + btnGap))
+            btn.Size = UDim2.new(0, 240, 0, btnHeight)
+            btn.Position = UDim2.new(0.5, -120, 0, btnY + (i-1) * (btnHeight + btnGap))
             btn.Text = btnData.text
             btn.TextColor3 = Color3.fromRGB(255, 255, 255)
             btn.TextSize = 14
@@ -913,27 +644,49 @@ local AssessmentUI = {
             -- Click events
             if i == 1 then
                 btn.MouseButton1Click:Connect(function()
-                    AssessmentUI:FullScan()
+                    AssessmentUI:StartSpy()
                 end)
             elseif i == 2 then
                 btn.MouseButton1Click:Connect(function()
-                    AssessmentUI:ShowExploitCheck()
+                    AssessmentUI:StopSpy()
                 end)
             elseif i == 3 then
                 btn.MouseButton1Click:Connect(function()
-                    AssessmentUI:ShowExecutorCheck()
+                    AssessmentUI:ScanAntiHack()
                 end)
             elseif i == 4 then
                 btn.MouseButton1Click:Connect(function()
-                    AssessmentUI:ShowScore()
+                    AssessmentUI:ShowStatus()
+                end)
+            elseif i == 5 then
+                btn.MouseButton1Click:Connect(function()
+                    AssessmentUI:ClearLogs()
                 end)
             end
         end
         
+        -- Status bar
+        local statusBar = Instance.new("Frame")
+        statusBar.Size = UDim2.new(1, -20, 0, 30)
+        statusBar.Position = UDim2.new(0, 10, 0, 245)
+        statusBar.BackgroundColor3 = Color3.fromRGB(10, 10, 25)
+        statusBar.BorderSizePixel = 0
+        statusBar.Parent = frame
+        
+        local statusLabel = Instance.new("TextLabel")
+        statusLabel.Size = UDim2.new(1, 0, 1, 0)
+        statusLabel.Text = "🔴 SPY INACTIVE | Protection: Normal | Blocks: 0"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        statusLabel.TextSize = 13
+        statusLabel.Font = Enum.Font.GothamBold
+        statusLabel.BackgroundTransparency = 1
+        statusLabel.Parent = statusBar
+        AssessmentUI.StatusLabel = statusLabel
+        
         -- Result display
         local resultFrame = Instance.new("ScrollingFrame")
-        resultFrame.Size = UDim2.new(1, -20, 1, -215)
-        resultFrame.Position = UDim2.new(0, 10, 0, 205)
+        resultFrame.Size = UDim2.new(1, -20, 1, -290)
+        resultFrame.Position = UDim2.new(0, 10, 0, 280)
         resultFrame.BackgroundColor3 = Color3.fromRGB(8, 8, 20)
         resultFrame.BackgroundTransparency = 0.5
         resultFrame.BorderSizePixel = 0
@@ -942,7 +695,7 @@ local AssessmentUI = {
         local resultLabel = Instance.new("TextLabel")
         resultLabel.Size = UDim2.new(1, -10, 1, -10)
         resultLabel.Position = UDim2.new(0, 5, 0, 5)
-        resultLabel.Text = "👆 Click 'SCAN ANTI-HACK' to check all anti-hack systems\n\nThe scan will detect:\n• Anti-Speed • Anti-Jump • Anti-Fly\n• Anti-Noclip • Anti-Spin • Anti-Teleport\n• Anti-GodMode • Anti-SilentAim\n• Anti-SpeedHack • Anti-ClickTeleport"
+        resultLabel.Text = "🕵️ SPY V7.4 - Anti-Hack & Ban Protection\n\nPress 'START SPY' to begin monitoring\n\nSpy will:\n• Monitor all remote events\n• Detect and block ban attempts\n• Identify anti-cheat traffic\n• Log all suspicious activities\n• Auto-protect when under attack"
         resultLabel.TextColor3 = Color3.fromRGB(150, 150, 200)
         resultLabel.TextSize = 13
         resultLabel.Font = Enum.Font.Gotham
@@ -965,15 +718,45 @@ local AssessmentUI = {
         end
     end,
     
-    FullScan = function()
-        AssessmentUI.ResultLabel.Text = "🔄 Scanning all anti-hack systems...\nPlease wait..."
+    StartSpy = function()
+        SpyEngine.Enabled = true
+        SpyHooker:HookAll()
+        
+        AssessmentUI.StatusLabel.Text = "🟢 SPY ACTIVE | Protection: " .. SpyEngine.ProtectionLevel .. " | Blocks: " .. SpyEngine.Stats.BlockedCount
+        AssessmentUI.StatusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+        
+        AssessmentUI.ResultLabel.Text = "🕵️ SPY ACTIVATED!\n\nMonitoring " .. SpyEngine.Stats.TotalRemotes .. " remotes...\n\nClick 'SCAN ANTI-HACK' to check protection levels"
+        AssessmentUI.ResultLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+        
+        SpyEngine:Notify("🕵️ Spy activated! Monitoring all remotes...")
+    end,
+    
+    StopSpy = function()
+        SpyEngine.Enabled = false
+        
+        AssessmentUI.StatusLabel.Text = "🔴 SPY INACTIVE | Protection: Normal | Blocks: " .. SpyEngine.Stats.BlockedCount
+        AssessmentUI.StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        
+        AssessmentUI.ResultLabel.Text = "🔴 SPY DEACTIVATED\n\nRemote monitoring stopped\n\nPress 'START SPY' to resume"
+        AssessmentUI.ResultLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        
+        SpyEngine:Notify("🔴 Spy deactivated")
+    end,
+    
+    ScanAntiHack = function()
+        if not SpyEngine.Enabled then
+            AssessmentUI.ResultLabel.Text = "⚠️ Please start SPY first!\n\nPress 'START SPY' to begin monitoring"
+            AssessmentUI.ResultLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+            return
+        end
+        
+        AssessmentUI.ResultLabel.Text = "🔄 Scanning anti-hack systems...\nPlease wait..."
         AssessmentUI.ResultLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
         
-        task.wait(1.5)
+        task.wait(1)
         
         local result = AntiHackDetector:FullScan()
         
-        -- Build report
         local report = {}
         table.insert(report, "╔═══════════════════════════════════════════════════════╗")
         table.insert(report, string.format("  🎯 %s", result.GameName))
@@ -981,36 +764,15 @@ local AssessmentUI = {
         table.insert(report, string.format("  📊 Security Score: %d/100", result.SecurityScore))
         table.insert(report, string.format("  ⚡ Risk Level: %s", result.RiskLevel))
         table.insert(report, "╠═══════════════════════════════════════════════════════╣")
-        
-        -- List all detections
-        local detections = {
-            {name = "Anti-Speed", data = result.AntiSpeed},
-            {name = "Anti-Jump", data = result.AntiJump},
-            {name = "Anti-Fly", data = result.AntiFly},
-            {name = "Anti-Noclip", data = result.AntiNoclip},
-            {name = "Anti-Spin", data = result.AntiSpin},
-            {name = "Anti-Teleport", data = result.AntiTeleport},
-            {name = "Anti-GodMode", data = result.AntiGodMode},
-            {name = "Anti-SilentAim", data = result.AntiSilentAim},
-            {name = "Anti-SpeedHack", data = result.AntiSpeedHack},
-            {name = "Anti-ClickTeleport", data = result.AntiClickTeleport},
-        }
-        
-        for _, detection in ipairs(detections) do
-            local icon = detection.data.detected and "✅" or "❌"
-            table.insert(report, string.format("  %s %s (%.0f%%)", 
-                icon, detection.name, detection.data.confidence))
-        end
-        
+        table.insert(report, string.format("  🛑 Blocked Remotes: %d", SpyEngine.Stats.BlockedCount))
+        table.insert(report, string.format("  🚨 Ban Attempts: %d", SpyEngine.Stats.BanAttempts))
+        table.insert(report, string.format("  ⚠️ Suspicious Remotes: %d", SpyEngine.Stats.SuspiciousCount))
+        table.insert(report, string.format("  📡 Total Remotes: %d", SpyEngine.Stats.TotalRemotes))
         table.insert(report, "╠═══════════════════════════════════════════════════════╣")
-        
-        if #result.Recommendations > 0 then
-            table.insert(report, "  💡 RECOMMENDATIONS:")
-            for _, rec in ipairs(result.Recommendations) do
-                table.insert(report, string.format("    %s", rec))
-            end
-        end
-        
+        table.insert(report, "  💡 PROTECTION STATUS:")
+        table.insert(report, string.format("    Level: %s", SpyEngine.ProtectionLevel))
+        table.insert(report, string.format("    Active: %s", SpyEngine.Enabled and "✅" or "❌"))
+        table.insert(report, string.format("    Ban Detected: %s", SpyEngine.BanDetected and "⚠️" or "✅"))
         table.insert(report, "╚═══════════════════════════════════════════════════════╝")
         
         AssessmentUI.ResultLabel.Text = table.concat(report, "\n")
@@ -1018,85 +780,76 @@ local AssessmentUI = {
             Color3.fromRGB(100, 255, 100) or 
             Color3.fromRGB(255, 200, 100)
         
-        -- Show badge
-        BadgeNotification.Show(
-            string.format("🛡️ Security Score: %d/100", result.SecurityScore),
-            string.format("Anti-Cheat: %s\nRisk Level: %s", 
-                result.AntiCheatType, result.RiskLevel),
-            result.SecurityScore >= 70 and "🛡️" or "⚠️",
-            result.SecurityScore >= 70 and Color3.fromRGB(0, 200, 100) or Color3.fromRGB(255, 150, 0),
-            5
-        )
+        -- Update status
+        AssessmentUI.StatusLabel.Text = "🟢 SPY ACTIVE | Protection: " .. SpyEngine.ProtectionLevel .. " | Blocks: " .. SpyEngine.Stats.BlockedCount
     end,
     
-    ShowExploitCheck = function()
-        local result = AntiHackDetector.DetectionResult
-        
-        if result.SecurityScore == 0 then
-            BadgeNotification.Show("⚠️ No Scan Yet", "Click 'SCAN ANTI-HACK' first!", "🔍", 
-                Color3.fromRGB(255, 150, 0), 3)
+    ShowStatus = function()
+        if not SpyEngine.Enabled then
+            AssessmentUI.ResultLabel.Text = "⚠️ SPY is not active!\n\nPress 'START SPY' to begin"
+            AssessmentUI.ResultLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
             return
         end
         
-        local desc = {}
-        table.insert(desc, "⚠️ ANTI-EXPLOIT DETECTION:")
+        local status = {}
+        table.insert(status, "🕵️ SPY STATUS:")
+        table.insert(status, "")
+        table.insert(status, string.format("Status: %s", SpyEngine.Enabled and "✅ Active" or "❌ Inactive"))
+        table.insert(status, string.format("Protection Level: %s", SpyEngine.ProtectionLevel))
+        table.insert(status, string.format("Blocked Remotes: %d", SpyEngine.Stats.BlockedCount))
+        table.insert(status, string.format("Ban Attempts: %d", SpyEngine.Stats.BanAttempts))
+        table.insert(status, string.format("Suspicious Remotes: %d", SpyEngine.Stats.SuspiciousCount))
+        table.insert(status, string.format("Total Remotes: %d", SpyEngine.Stats.TotalRemotes))
+        table.insert(status, string.format("Ban Detected: %s", SpyEngine.BanDetected and "⚠️ Yes" : "✅ No"))
+        table.insert(status, "")
         
-        local exploits = {
-            {name = "Speed Hack", detected = result.AntiSpeed.detected, conf = result.AntiSpeed.confidence},
-            {name = "Jump Hack", detected = result.AntiJump.detected, conf = result.AntiJump.confidence},
-            {name = "Fly Hack", detected = result.AntiFly.detected, conf = result.AntiFly.confidence},
-            {name = "Noclip", detected = result.AntiNoclip.detected, conf = result.AntiNoclip.confidence},
-            {name = "Spin Hack", detected = result.AntiSpin.detected, conf = result.AntiSpin.confidence},
-            {name = "Teleport", detected = result.AntiTeleport.detected, conf = result.AntiTeleport.confidence},
-            {name = "GodMode", detected = result.AntiGodMode.detected, conf = result.AntiGodMode.confidence},
-        }
-        
-        for _, exp in ipairs(exploits) do
-            local icon = exp.detected and "🔴" or "🟢"
-            table.insert(desc, string.format("%s %s (%.0f%%)", icon, exp.name, exp.conf))
+        if SpyEngine.BanDetected then
+            table.insert(status, "🚨 WARNING: Ban attempts detected!")
+            table.insert(status, string.format("Last attempt: %s", os.date("%H:%M:%S", SpyEngine.LastBanAttempt)))
+        else
+            table.insert(status, "✅ No ban attempts detected")
         end
         
-        BadgeNotification.Show("⚠️ Exploit Protection Check", table.concat(desc, "\n"), 
-            "⚠️", Color3.fromRGB(255, 100, 50), 6)
+        table.insert(status, "")
+        table.insert(status, "🛡️ Auto-protection is " .. (SpyEngine.ProtectionLevel == "Ultra" and "ACTIVE" : "Standby"))
+        
+        AssessmentUI.ResultLabel.Text = table.concat(status, "\n")
+        AssessmentUI.ResultLabel.TextColor3 = SpyEngine.BanDetected and 
+            Color3.fromRGB(255, 100, 100) or 
+            Color3.fromRGB(100, 255, 100)
     end,
     
-    ShowExecutorCheck = function()
-        local result = AntiHackDetector.DetectionResult
-        
-        if result.SecurityScore == 0 then
-            BadgeNotification.Show("⚠️ No Scan Yet", "Click 'SCAN ANTI-HACK' first!", "🔍", 
-                Color3.fromRGB(255, 150, 0), 3)
-            return
-        end
-        
-        local desc = {"💻 EXECUTOR COMPATIBILITY:"}
-        for name, data in pairs(result.ExecutorCompat) do
-            table.insert(desc, string.format("%s: %s", name, data.status))
-        end
-        
-        BadgeNotification.Show("💻 Executor Check", table.concat(desc, "\n"), 
-            "💻", Color3.fromRGB(150, 50, 255), 5)
-    end,
-    
-    ShowScore = function()
-        local result = AntiHackDetector.DetectionResult
-        
-        if result.SecurityScore == 0 then
-            BadgeNotification.Show("⚠️ No Scan Yet", "Click 'SCAN ANTI-HACK' first!", "🔍", 
-                Color3.fromRGB(255, 150, 0), 3)
-            return
-        end
-        
-        BadgeNotification.Show(
-            string.format("📊 Security Score: %d/100", result.SecurityScore),
-            string.format("Anti-Cheat: %s\nRisk Level: %s", 
-                result.AntiCheatType, result.RiskLevel),
-            "📊",
-            Color3.fromRGB(0, 150, 255),
-            4
-        )
+    ClearLogs = function()
+        SpyEngine.RemoteLogs = {}
+        AssessmentUI.ResultLabel.Text = "🗑️ Logs cleared!\n\nAll remote logs have been removed"
+        AssessmentUI.ResultLabel.TextColor3 = Color3.fromRGB(150, 150, 200)
     end,
 }
+
+-- ============ AUTO PROTECTION LOOP ============
+task.spawn(function()
+    while true do
+        task.wait(5)
+        
+        if SpyEngine.Enabled then
+            -- Tự động giảm protection level nếu không có ban
+            if SpyEngine.LastBanAttempt > 0 and os.time() - SpyEngine.LastBanAttempt > 120 then
+                if SpyEngine.ProtectionLevel == "Ultra" then
+                    SpyEngine.ProtectionLevel = "High"
+                    SpyEngine:Notify("🛡️ Protection level decreased to HIGH")
+                elseif SpyEngine.ProtectionLevel == "High" and SpyEngine.BanCount < 2 then
+                    SpyEngine.ProtectionLevel = "Normal"
+                    SpyEngine:Notify("🛡️ Protection level decreased to NORMAL")
+                end
+            end
+            
+            -- Update status bar
+            if AssessmentUI.StatusLabel then
+                AssessmentUI.StatusLabel.Text = "🟢 SPY ACTIVE | Protection: " .. SpyEngine.ProtectionLevel .. " | Blocks: " .. SpyEngine.Stats.BlockedCount
+            end
+        end
+    end
+end)
 
 -- ============ KEYBIND ============
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -1105,43 +858,49 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.F8 then
         AssessmentUI:Toggle()
     end
+    
+    if input.KeyCode == Enum.KeyCode.F9 then
+        if SpyEngine.Enabled then
+            AssessmentUI:StopSpy()
+        else
+            AssessmentUI:StartSpy()
+        end
+    end
 end)
 
 -- ============ AUTO START ============
 task.wait(1)
 AssessmentUI:Init()
 
-BadgeNotification.Show(
-    "🛡️ Spy V7.3 PRO MAX Loaded!",
-    "Press F8 to open Anti-Hack Assessment\nDetects 10+ anti-hack systems",
-    "🔮",
-    Color3.fromRGB(100, 50, 255),
-    4
-)
-
 print([[
 ╔══════════════════════════════════════════════════════════════════╗
-║  🛡️ SPY V7.2 - ANTI-HACK ASSESSMENT PRO MAX                    ║
+║  🕵️ SPY V7.4 - ULTIMATE ANTI-HACK & BAN PROTECTION             ║
 ║  ════════════════════════════════════════════════════════════  ║
 ║                                                               ║
-║  🎯 DETECTS 10 ANTI-HACK TYPES:                               ║
-║  • Anti-Speed • Anti-Jump • Anti-Fly                         ║
-║  • Anti-Noclip • Anti-Spin • Anti-Teleport                   ║
-║  • Anti-GodMode • Anti-SilentAim                             ║
-║  • Anti-SpeedHack • Anti-ClickTeleport                       ║
+║  🔍 SPY ENGINE:                                               ║
+║  • Bắt toàn bộ remote events                                 ║
+║  • Phát hiện lệnh ban từ anti-cheat                          ║
+║  • Tự động block remote nguy hiểm                            ║
+║  • Log tất cả traffic                                        ║
 ║                                                               ║
-║  📊 HIỂN THỊ CHI TIẾT:                                       ║
-║  • Có hay không từng loại anti-hack                          ║
-║  • Độ tin cậy (confidence %)                                  ║
-║  • Điểm bảo mật tổng thể                                     ║
-║  • Khuyến nghị sử dụng                                       ║
+║  🛡️ BAN PROTECTION:                                          ║
+║  • Phát hiện ban attempt                                     ║
+║  • Cảnh báo real-time                                        ║
+║  • Auto block remote                                         ║
+║  • Tăng protection level khi bị tấn công                    ║
 ║                                                               ║
-║  ⌨️ Nhấn F8 để mở UI                                        ║
+║  ⌨️ KEYBINDS:                                                 ║
+║  • F8 - Mở UI                                                ║
+║  • F9 - Bật/Tắt Spy                                         ║
 ╚══════════════════════════════════════════════════════════════════╝
 ]])
 
+-- ============ AUTO START SPY ============
+task.wait(0.5)
+AssessmentUI:StartSpy()
+
 return {
-    AntiHackDetector = AntiHackDetector,
+    Spy = SpyEngine,
     UI = AssessmentUI,
-    BadgeNotification = BadgeNotification,
+    Detector = AntiHackDetector,
 }
